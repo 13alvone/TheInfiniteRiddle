@@ -30,11 +30,10 @@ class TestStemsGeneration(unittest.TestCase):
             irr.run_riddle("glass", outdir, db_path, "short", True, 0, -14.0, None, 0)
             stems = list(outdir.glob("*_STEM_*wav"))
             self.assertEqual(len(stems), 4)
-            conn = sqlite3.connect(db_path)
-            cur = conn.cursor()
-            cur.execute("SELECT COUNT(*) FROM artifacts WHERE kind='stem'")
-            self.assertEqual(cur.fetchone()[0], 4)
-            conn.close()
+            with sqlite3.connect(db_path) as conn:
+                cur = conn.cursor()
+                cur.execute("SELECT COUNT(*) FROM artifacts WHERE kind='stem'")
+                self.assertEqual(cur.fetchone()[0], 4)
         finally:
             irr.sample_duration_seconds = orig_duration
 

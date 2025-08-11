@@ -7,11 +7,12 @@ from typing import Optional
 from ..io import sha256_of_file
 
 
-def ensure_vault(db_path: Path) -> None:
-    conn = sqlite3.connect(str(db_path))
-    try:
+def ensure_vault(conn: sqlite3.Connection) -> None:
+    """Create required tables and indexes if they do not exist."""
+    with conn:
         cur = conn.cursor()
-        cur.execute("""
+        cur.execute(
+            """
         CREATE TABLE IF NOT EXISTS runs (
           id INTEGER PRIMARY KEY,
           started_utc TEXT NOT NULL,
@@ -26,8 +27,10 @@ def ensure_vault(db_path: Path) -> None:
           hostility REAL,
           obliquity REAL
         );
-        """)
-        cur.execute("""
+        """
+        )
+        cur.execute(
+            """
         CREATE TABLE IF NOT EXISTS run_harmony (
           run_id INTEGER REFERENCES runs(id),
           section_idx INTEGER,
@@ -37,8 +40,10 @@ def ensure_vault(db_path: Path) -> None:
           end_sec REAL,
           PRIMARY KEY (run_id, section_idx)
         );
-        """)
-        cur.execute("""
+        """
+        )
+        cur.execute(
+            """
         CREATE TABLE IF NOT EXISTS run_rhythm (
           run_id INTEGER REFERENCES runs(id),
           section_idx INTEGER,
@@ -48,8 +53,10 @@ def ensure_vault(db_path: Path) -> None:
           swing REAL,
           PRIMARY KEY (run_id, section_idx)
         );
-        """)
-        cur.execute("""
+        """
+        )
+        cur.execute(
+            """
         CREATE TABLE IF NOT EXISTS artifacts (
           id INTEGER PRIMARY KEY,
           run_id INTEGER REFERENCES runs(id),
@@ -61,52 +68,72 @@ def ensure_vault(db_path: Path) -> None:
           key_hint TEXT,
           mythic_type TEXT
         );
-        """)
+        """
+        )
         cur.execute("CREATE INDEX IF NOT EXISTS idx_artifacts_kind ON artifacts(kind);")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_runs_theme ON runs(theme);")
-        conn.commit()
-    finally:
-        conn.close()
 
 
-def vault_insert_run(db_path: Path, run) -> int:
-    conn = sqlite3.connect(str(db_path))
-    try:
+def vault_insert_run(conn: sqlite3.Connection, run) -> int:
+    """Insert a run record and its section details."""
+    with conn:
         cur = conn.cursor()
-        cur.execute("""
+        cur.execute(
+            """
         INSERT INTO runs(started_utc, theme, seed_commitment, duration_sec, form_path, bpm_base, lufs_target, coherence, presence, hostility, obliquity)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            run["started_utc"], run["theme"], run["seed_commitment"], run["duration_sec"],
-            run["form_path"], run["bpm_base"], run["lufs_target"], run["coherence"],
-            run["presence"], run["hostility"], run["obliquity"]
-        ))
+        """,
+            (
+                run["started_utc"],
+                run["theme"],
+                run["seed_commitment"],
+                run["duration_sec"],
+                run["form_path"],
+                run["bpm_base"],
+                run["lufs_target"],
+                run["coherence"],
+                run["presence"],
+                run["hostility"],
+                run["obliquity"],
+            ),
+        )
         run_id = cur.lastrowid
         for idx, sec in enumerate(run["sections"]):
-            cur.execute("""
+            cur.execute(
+                """
             INSERT INTO run_harmony(run_id, section_idx, key_root, mode, start_sec, end_sec)
             VALUES (?, ?, ?, ?, ?, ?)
-            """, (run_id, idx, sec["key_root"], sec["mode"], sec["start_sec"], sec["end_sec"]))
-            cur.execute("""
+            """,
+                (run_id, idx, sec["key_root"], sec["mode"], sec["start_sec"], sec["end_sec"]),
+            )
+            cur.execute(
+                """
             INSERT INTO run_rhythm(run_id, section_idx, time_sig, euclid, ca_rule, swing)
             VALUES (?, ?, ?, ?, ?, ?)
-            """, (run_id, idx, sec["time_sig"], sec["euclid"], sec["ca_rule"], sec["swing"]))
-        conn.commit()
+            """,
+                (run_id, idx, sec["time_sig"], sec["euclid"], sec["ca_rule"], sec["swing"]),
+            )
         return run_id
-    finally:
-        conn.close()
 
 
-def vault_insert_artifact(db_path: Path, run_id: int, kind: str, path: Path, duration_sec: float,
-                          bpm_est: Optional[float], key_hint: Optional[str], mythic_type: Optional[str]) -> None:
+def vault_insert_artifact(
+    conn: sqlite3.Connection,
+    run_id: int,
+    kind: str,
+    path: Path,
+    duration_sec: float,
+    bpm_est: Optional[float],
+    key_hint: Optional[str],
+    mythic_type: Optional[str],
+) -> None:
+    """Insert an artifact record."""
     sha256 = sha256_of_file(path)
-    conn = sqlite3.connect(str(db_path))
-    try:
+    with conn:
         cur = conn.cursor()
-        cur.execute("""
+        cur.execute(
+            """
         INSERT INTO artifacts(run_id, kind, path, sha256, duration_sec, bpm_est, key_hint, mythic_type)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (run_id, kind, str(path), sha256, duration_sec, bpm_est, key_hint, mythic_type))
-        conn.commit()
-    finally:
-        conn.close()
+        """,
+            (run_id, kind, str(path), sha256, duration_sec, bpm_est, key_hint, mythic_type),
+        )
