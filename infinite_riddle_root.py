@@ -688,8 +688,13 @@ def build_perc(prng: Xoshiro256StarStar, bars: int, ppq: int, ts_num: int, ts_de
 
 # ----------------------------- WAV Rendering -----------------------------
 def render_audio(output_path: Path, midi_events: Dict[str, List[Tuple[int,int,int,int]]], bpm: float,
-                 ppq: int, sr: int, total_sec: int, limiter_ceiling: float = 0.97) -> None:
-    """Very simple, streamed renderer based on MIDI-like events."""
+                 ppq: int, sr: int, total_sec: int, limiter_ceiling: float = 0.97,
+                 stem_paths: Optional[Dict[str, Path]] = None) -> None:
+    """Very simple, streamed renderer based on MIDI-like events.
+
+    If ``stem_paths`` is provided, additional per-track renders are written to the
+    given paths using the same synthesis chain, one track at a time.
+    """
     # Convert BPM to seconds per tick
     s_per_tick = 60.0 / bpm / ppq
     # Build event timeline per sample
@@ -831,6 +836,12 @@ def render_audio(output_path: Path, midi_events: Dict[str, List[Tuple[int,int,in
                 frames += struct.pack("<i", ri)[0:3]
             wf.writeframes(frames)
             t_sec = t_end
+
+
+    if stem_paths:
+        for track, path in stem_paths.items():
+            sub_events = {track: midi_events.get(track, [])}
+            render_audio(path, sub_events, bpm, ppq, sr, total_sec, limiter_ceiling, stem_paths=None)
 
 
 # ----------------------------- Mythic Variants -----------------------------
@@ -1187,6 +1198,14 @@ def run_riddle(theme_req: Optional[str], outdir: Path, db_path: Path, duration_b
         json_path = outdir / f"{base}.riddle.json"
         midi_path = outdir / f"{base}_MIDI_{seed8}.mid"
         wav_path  = outdir / f"{base}.wav"
+        stem_paths = {}
+        if stems:
+            stem_paths = {
+                "lead": outdir / f"{base}_STEM_LEAD_{seed8}.wav",
+                "pad":  outdir / f"{base}_STEM_PAD_{seed8}.wav",
+                "bass": outdir / f"{base}_STEM_BASS_{seed8}.wav",
+                "perc": outdir / f"{base}_STEM_PERC_{seed8}.wav",
+            }
 
         # Save MIDI
         mb.save(midi_path)
@@ -1194,8 +1213,12 @@ def run_riddle(theme_req: Optional[str], outdir: Path, db_path: Path, duration_b
 
         # Render WAV (streamed)
         midi_dict = {"lead":lead_events, "pad":pad_events, "bass":bass_events, "perc":perc_events}
-        render_audio(wav_path, midi_dict, bpm_base, ppq, 48000, total_sec)
+        render_audio(wav_path, midi_dict, bpm_base, ppq, 48000, total_sec,
+                     stem_paths=stem_paths if stems else None)
         logging.info("[i] WAV written: %s", wav_path.name)
+        if stems:
+            for p in stem_paths.values():
+                logging.info("[i] Stem written: %s", p.name)
 
         # Build sidecar JSON
         sidecar = {
@@ -1210,6 +1233,7 @@ def run_riddle(theme_req: Optional[str], outdir: Path, db_path: Path, duration_b
             "artifact_hashes": {
                 "midi": sha256_of_file(midi_path),
                 "wav": sha256_of_file(wav_path),
+                **({"stems": {k: sha256_of_file(p) for k, p in stem_paths.items()}} if stems else {}),
             },
             "started_utc": timestamp_now_utc(),
             "loudness_target": lufs_target,
@@ -1251,6 +1275,9 @@ def run_riddle(theme_req: Optional[str], outdir: Path, db_path: Path, duration_b
         vault_insert_artifact(db_path, run_id, "json", json_path, 0.0, None, None, None)
         vault_insert_artifact(db_path, run_id, "midi", midi_path, total_sec, bpm_base, keymode, None)
         vault_insert_artifact(db_path, run_id, "wav",  wav_path,  total_sec, bpm_base, keymode, None)
+        if stems:
+            for name, path in stem_paths.items():
+                vault_insert_artifact(db_path, run_id, "stem", path, total_sec, bpm_base, keymode, name)
 
         # Mythic variants (choose up to mythic_max we can implement)
         mythics = [
@@ -1292,7 +1319,7 @@ def parse_args(argv=None):
     p.add_argument("outdir", help="Output directory for artifacts.")
     p.add_argument("--db", default="riddle_vault.db", help="Path to SQLite vault.")
     p.add_argument("--bucket", choices=["short","med","long"], default=None, help="Force duration bucket.")
-    p.add_argument("--stems", action="store_true", help="(Reserved) Emit stems (future).")
+    p.add_argument("--stems", action="store_true", help="Render individual stems alongside mix.")
     p.add_argument("--mythic-max", type=int, default=2, help="Max mythic variants to attempt.")
     p.add_argument("--lufs-target", type=float, default=-14.0, help="Target loudness metadata.")
     p.add_argument("-v", "--verbose", action="count", default=1, help="Increase verbosity (-v or -vv).")

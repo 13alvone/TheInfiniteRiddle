@@ -25,7 +25,7 @@ Begin with curiosity. Proceed with headphones at responsible levels.
 
 - **Primary WAV**: 48 kHz • 24-bit • true-peak limited.  
 - **Primary MIDI**: multi-track (lead, pad, bass, perc), tempo map, controllers.  
-- **Optional STEMS**: bass/sub, pad/textures, lead/melody, perc/impulse, fx/sigil-noise.  
+- **Optional STEMS**: bass/sub, pad/textures, lead/melody, perc/impulse, fx/sigil-noise (enable with `--stems`).
 - **Optional VIDEO**: oscilloscope + spectrogram + sigils (coming online incrementally).  
 - **MYTHIC VARIANTS**: ritual transforms of the same audio—siblings, not clones.  
 - **SIDECAR JSON**: attestation (seed commitment, grammar, hashes).  
@@ -85,18 +85,20 @@ Nothing to compile. Keep an SSD nearby if you chase hour-long drones.
 ## CLI (v0.2)
 
 	#!/usr/bin/env bash
-	python riddle_v0_2.py generate <glass|salt|auto> <outdir> \
-	  --db riddle_vault.db \
-	  --bucket {short|med|long} \
-	  --mythic-max 2 \
-	  --lufs-target -14 \
-	  [--seed <hex>] \
-	  [-v|-vv]
+        python riddle_v0_2.py generate <glass|salt|auto> <outdir> \
+          --db riddle_vault.db \
+          --bucket {short|med|long} \
+          [--stems] \
+          --mythic-max 2 \
+          --lufs-target -14 \
+          [--seed <hex>] \
+          [-v|-vv]
 
 Flags:
-- `--bucket` Heavy-tailed durations: short (~30–180s), med (~5–20m), long (~45–240m).  
-- `--mythic-max` Max number of mythic variants to attempt.  
-- `--seed` **Dev-only** reproducibility; only the **commitment** is recorded.  
+- `--bucket` Heavy-tailed durations: short (~30–180s), med (~5–20m), long (~45–240m).
+- `--mythic-max` Max number of mythic variants to attempt.
+- `--stems` Render per-track WAVs (lead, pad, bass, perc) alongside the mix.
+- `--seed` **Dev-only** reproducibility; only the **commitment** is recorded.
 - `-v`/`-vv` Verbose / very verbose logs (no print—only logging with prefixes).
 
 Example logs:
