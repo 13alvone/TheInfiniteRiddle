@@ -269,15 +269,19 @@ def build_melody(
     base_octave: int,
     sigil_pcs: List[int],
 ) -> List[Tuple[int, int, int, int]]:
+    ticks_per_bar = ppq * ts_num * 4 // ts_den
+    beats_per_bar = ts_num * 4 // ts_den
+    ticks_per_beat = ticks_per_bar // beats_per_bar if beats_per_bar else 0
+
     events = []
     for bar in range(bars):
-        for beat in range(ts_num):
+        for beat in range(beats_per_bar):
             if prng_mel.uniform() < density:
                 note = midi_note_in_scale(
                     prng_mel, scale_pcs, base_octave * 12, (base_octave + 2) * 12
                 )
-                start = bar * ppq * ts_num + beat * ppq
-                dur = int(ppq * prng_mel.uniform() * 0.8) or ppq // 2
+                start = bar * ticks_per_bar + beat * ticks_per_beat
+                dur = int(ticks_per_beat * prng_mel.uniform() * 0.8) or ticks_per_beat // 2
                 vel = prng_mel.randint(60, 120)
                 events.append((start, dur, note, vel))
     return events
@@ -291,11 +295,13 @@ def build_bass(
     ts_num: int,
     ts_den: int,
 ) -> List[Tuple[int, int, int, int]]:
+    ticks_per_bar = ppq * ts_num * 4 // ts_den
+
     events = []
     for bar in range(bars):
         note = midi_note_in_scale(prng, scale_pcs, 36, 60)
-        start = bar * ppq * ts_num
-        dur = ppq * ts_num
+        start = bar * ticks_per_bar
+        dur = ticks_per_bar
         vel = prng.randint(70, 110)
         events.append((start, dur, note, vel))
     return events
@@ -309,13 +315,16 @@ def build_perc(
     ts_den: int,
     theme: str,
 ) -> List[Tuple[int, int, int, int]]:
+    ticks_per_bar = ppq * ts_num * 4 // ts_den
+    beats_per_bar = ts_num * 4 // ts_den
+
     events = []
-    pulses = ts_num * ppq
-    pattern = euclidean_rhythm(ts_num, pulses)
+    pattern = euclidean_rhythm(beats_per_bar, ticks_per_bar)
+    ticks_per_beat = ticks_per_bar // beats_per_bar if beats_per_bar else 0
     for bar in range(bars):
         for i, bit in enumerate(pattern):
             if bit:
-                start = bar * pulses + i
+                start = bar * ticks_per_bar + i
                 vel = prng.randint(80, 120)
-                events.append((start, ppq // 4, 0, vel))
+                events.append((start, ticks_per_beat // 4 or 1, 0, vel))
     return events
