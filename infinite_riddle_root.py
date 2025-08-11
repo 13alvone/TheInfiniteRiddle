@@ -1283,7 +1283,7 @@ def run_riddle(theme_req: Optional[str], outdir: Path, db_path: Path, duration_b
 
 
 # ----------------------------- CLI -----------------------------
-def parse_args():
+def parse_args(argv=None):
     p = argparse.ArgumentParser(
         description="The Infinite Riddle — generate unique WAV/MIDI artifacts with provenance.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -1296,13 +1296,26 @@ def parse_args():
     p.add_argument("--mythic-max", type=int, default=2, help="Max mythic variants to attempt.")
     p.add_argument("--lufs-target", type=float, default=-14.0, help="Target loudness metadata.")
     p.add_argument("-v", "--verbose", action="count", default=1, help="Increase verbosity (-v or -vv).")
-    return p.parse_args()
+    return p.parse_args(argv)
+
+
+def _resolve_artifact_paths(outdir_arg: str, db_arg: str, root: Path) -> Tuple[Path, Path]:
+    outdir = Path(outdir_arg).resolve()
+    db_path = Path(db_arg).resolve()
+    try:
+        outdir.relative_to(root)
+        db_path.relative_to(root)
+    except ValueError:
+        raise ValueError(f"Paths must reside within {root}")
+    outdir.mkdir(parents=True, exist_ok=True)
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    return outdir, db_path
 
 
 def main():
     args = parse_args()
-    outdir = Path(args.outdir)
-    db_path = Path(args.db)
+    root = Path.cwd().resolve()
+    outdir, db_path = _resolve_artifact_paths(args.outdir, args.db, root)
     theme = None if args.theme == "auto" else args.theme
     run_riddle(theme, outdir, db_path, args.bucket, args.stems, args.mythic_max, args.lufs_target, args.verbose)
 
