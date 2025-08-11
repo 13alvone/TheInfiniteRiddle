@@ -33,7 +33,10 @@ from .synth import (
 from .vault import ensure_vault, vault_insert_run, vault_insert_artifact
 from .qa import measure_peak, measure_rms, validate_lufs
 
+__version__ = "0.2"
+
 __all__ = [
+    "__version__",
     "setup_logging", "blake2b_digest", "gather_entropy", "domain_prngs",
     "pick_theme", "pick_key", "scale_pitches", "sample_duration_seconds",
     "pick_form", "pick_time_signature", "pick_time_signatures",
@@ -120,7 +123,7 @@ def run_riddle(
 ) -> None:
     try:
         setup_logging(verbosity)
-        logging.info("[i] Starting The Infinite Riddle v0.1")
+        logging.info("[i] Starting The Infinite Riddle v%s", __version__)
         with sqlite3.connect(str(db_path)) as conn:
             ensure_vault(conn)
 

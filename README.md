@@ -1,5 +1,5 @@
 # The Infinite Riddle
-Version: 0.2 • Status: Uncaged • License: Yours
+Version: 0.2 (`riddle.__version__`) • Status: Uncaged • License: Yours
 
 > A machine that dreams in sound and leaves its dreams behind.  
 > Every time you touch it, it remembers differently.
