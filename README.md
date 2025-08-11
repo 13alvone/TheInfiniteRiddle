@@ -13,7 +13,7 @@ This README tells you just enough to begin, and not nearly enough to feel safe.
 ## Why this exists
 
 - **Structured chaos**: randomness with a spine; themes that drift, never repeat.  
-- **Artifacts you can use**: sample-ready WAVs, DAW-friendly MIDI, and mythic variants (backmask, chalice, mirror-salt, shatter, ashen, liminal…).  
+- **Artifacts you can use**: sample-ready WAVs, DAW-friendly MIDI, and mythic variants (backmask, mirror-salt, ashen, liminal, cipherspray…).
 - **Provenance**: each file stamped, hashed, and indexed in a local SQLite **Vault**.  
 - **Operator-first**: outputs belong to you.
 
@@ -107,7 +107,7 @@ Example logs:
 	[i] Key=D lydian; BPM≈98.4
 	[i] MIDI written: 2025..._MIDI_deadbeef.mid
 	[i] WAV written:  2025..._RIDDLE_Glass_..._deadbeef.wav
-	[i] Mythic generated: ..._MYTHIC_Shatter_deadbeef.wav
+        [i] Mythic generated: ..._MYTHIC_Ashen_deadbeef.wav
 	[i] Completed run. SeedCommit=2fd4e1c6...
 
 ---
@@ -142,13 +142,10 @@ Example logs:
 
 ## Mythic siblings (you may not always get them)
 
-- **Backmask** reverse playback; faint glue tails  
-- **Chalice** varispeed -7% + subharmonic layer  
-- **Mirror Salt** mid/side inversion with microphase  
-- **Shatter** grain-freeze and reassembly at golden-ratio frames  
-- **Ashen** multi-band bit-age, gentle tape hiss  
-- **Liminal** -20 dB drone bed (capped length)  
-- **Seal Encoding** FLAC + metadata sigil + stereo micro-decorrelation  
+- **Backmask** reverse playback; faint glue tails
+- **Ashen** multi-band bit-age, gentle tape hiss
+- **Mirror Salt** mid/side inversion with microphase
+- **Liminal** -20 dB drone bed (capped length)
 - **CipherSpray** inaudible watermark that encodes the seed commitment
 
 They are siblings, not parents. Do not mistake the echo for the voice.
@@ -186,7 +183,7 @@ If you feel watched, that’s just the metronome. Probably.
 
 - License defaults to **yours** (operator ownership).  
 - Stems are DAW-friendly; MIDI carries tempo, signatures, controllers.  
-- Mythics are fair game; consider phasing **Chalice** under vocals, or **Shatter** as a ghost bed.
+- Mythics are fair game; consider phasing **Mirror Salt** under vocals, or **Ashen** as a ghost bed.
 
 If you sample the engine sampling itself, you may owe yourself royalties.
 
