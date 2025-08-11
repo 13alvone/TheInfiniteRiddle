@@ -20,6 +20,7 @@ from .synth import (
     mythic_mirrorsalt_ms, mythic_liminal_bed, mythic_cipherspray_watermark,
 )
 from .vault import ensure_vault, vault_insert_run, vault_insert_artifact
+from .qa import measure_peak, measure_rms, validate_lufs
 
 __all__ = [
     "setup_logging", "blake2b_digest", "gather_entropy", "domain_prngs",
@@ -30,7 +31,7 @@ __all__ = [
     "mythic_ashen_bitcrush", "mythic_mirrorsalt_ms", "mythic_liminal_bed",
     "mythic_cipherspray_watermark", "ensure_vault", "vault_insert_run",
     "vault_insert_artifact", "parse_args", "_resolve_artifact_paths",
-    "run_riddle",
+    "measure_peak", "measure_rms", "validate_lufs", "run_riddle",
 ]
 
 
@@ -211,6 +212,11 @@ def run_riddle(theme_req: Optional[str], outdir: Path, db_path: Path, duration_b
         if stems:
             for p in stem_paths.values():
                 logging.info("[i] Stem written: %s", p.name)
+        peak_db = measure_peak(wav_path)
+        rms_db = measure_rms(wav_path)
+        crest_db = peak_db - rms_db
+        if not validate_lufs(rms_db, lufs_target):
+            logging.warning("[!] LUFS target %.1f dB, measured %.1f dB", lufs_target, rms_db)
 
         sidecar = {
             "seed_commitment": commit,
@@ -228,8 +234,8 @@ def run_riddle(theme_req: Optional[str], outdir: Path, db_path: Path, duration_b
             },
             "started_utc": timestamp_now_utc(),
             "loudness_target": lufs_target,
-            "crest_factor_est": None,
-            "true_peak_est": None,
+            "crest_factor_est": crest_db,
+            "true_peak_est": peak_db,
         }
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(sidecar, f, indent=2)
