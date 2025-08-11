@@ -1,5 +1,5 @@
 # The Infinite Riddle — Audio/AV Relic Forge & Music Grammar Spec
-Version: 0.1 (Design Freeze Candidate)
+Version: 0.2 (Design Freeze Candidate)
 Status: Draft
 Owner: The Infinite Riddle Core
 Scope: Audio/MIDI/Video generation & provenance; form/harmony/rhythm grammar; mythic transforms; vault schema.
