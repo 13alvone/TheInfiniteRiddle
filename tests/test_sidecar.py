@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import json
-import sqlite3
 import sys
 from pathlib import Path
 
