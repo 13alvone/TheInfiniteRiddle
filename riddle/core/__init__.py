@@ -119,6 +119,29 @@ MODES = {
 
 NOTE_NAMES_SHARP = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"]
 
+# Mapping from pitch class (0=C … 11=B) to MIDI key signature "sf" values.
+# The "sf" parameter represents the number of sharps (positive) or flats
+# (negative) for major keys in the circle of fifths. Values range from -7 to 7.
+PC_TO_SF = {
+    0: 0,   # C major
+    1: -5,  # Db major
+    2: 2,   # D major
+    3: -3,  # Eb major
+    4: 4,   # E major
+    5: -1,  # F major
+    6: 6,   # F# major
+    7: 1,   # G major
+    8: -4,  # Ab major
+    9: 3,   # A major
+    10: -2, # Bb major
+    11: 5,  # B major
+}
+
+
+def pitch_class_to_sf(pc: int) -> int:
+    """Return MIDI key signature "sf" for a given pitch class."""
+    return PC_TO_SF[pc % 12]
+
 
 def pick_theme(prng_names: Xoshiro256StarStar, requested: Optional[str]) -> str:
     if requested and requested.lower() in ("glass", "salt"):
