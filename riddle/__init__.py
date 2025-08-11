@@ -7,13 +7,23 @@ import logging
 import math
 import sqlite3
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 from .core import (
-    setup_logging, blake2b_digest, gather_entropy, domain_prngs,
-    pick_theme, pick_key, scale_pitches, sample_duration_seconds,
-    pick_form, pick_time_signature, build_melody, build_bass,
-    build_perc, NOTE_NAMES_SHARP,
+    setup_logging,
+    blake2b_digest,
+    gather_entropy,
+    domain_prngs,
+    pick_theme,
+    pick_key,
+    scale_pitches,
+    sample_duration_seconds,
+    pick_form,
+    pick_time_signature,
+    build_melody,
+    build_bass,
+    build_perc,
+    NOTE_NAMES_SHARP,
 )
 from .io import MidiBuilder, sha256_of_file, seed_commitment, timestamp_now_utc
 from .synth import (
@@ -26,8 +36,9 @@ from .qa import measure_peak, measure_rms, validate_lufs
 __all__ = [
     "setup_logging", "blake2b_digest", "gather_entropy", "domain_prngs",
     "pick_theme", "pick_key", "scale_pitches", "sample_duration_seconds",
-    "pick_form", "pick_time_signature", "build_melody", "build_bass",
-    "build_perc", "NOTE_NAMES_SHARP", "MidiBuilder", "sha256_of_file",
+    "pick_form", "pick_time_signature", "pick_time_signatures",
+    "build_melody", "build_bass", "build_perc", "NOTE_NAMES_SHARP",
+    "MidiBuilder", "sha256_of_file",
     "seed_commitment", "timestamp_now_utc", "render_audio", "mythic_backmask",
     "mythic_ashen_bitcrush", "mythic_mirrorsalt_ms", "mythic_liminal_bed",
     "mythic_cipherspray_watermark", "ensure_vault", "vault_insert_run",
@@ -85,6 +96,17 @@ def _resolve_artifact_paths(outdir_arg: str, db_arg: str, root: Path) -> Tuple[P
     return outdir, db_path
 
 
+def pick_time_signatures(prng, theme: str, form_nodes: List[str]):
+    """Pick an odd-meter signature for each form node."""
+    sigs = []
+    for _ in form_nodes:
+        ts = pick_time_signature(prng, theme)
+        if isinstance(ts, list):
+            ts = ts[0]
+        sigs.append(ts)
+    return sigs
+
+
 def run_riddle(
     theme_req: Optional[str],
     outdir: Path,
@@ -132,29 +154,24 @@ def run_riddle(
             logging.info("[i] Key=%s %s; BPM≈%.1f", key_pc_name, mode_name, bpm_base)
 
             ppq = 480
-            ts_choice = pick_time_signature(prngs["rhythm"], theme)
-            if isinstance(ts_choice, list):
-                time_sigs = ts_choice
-            else:
-                time_sigs = [ts_choice]
-            ts_num, ts_den = time_sigs[0]
-            beats_per_bar = ts_num * (4 / ts_den)
-            bars_total = max(1, int((total_sec / 60.0) * (bpm_base / beats_per_bar)))
-            section_bars = []
-            sec_len = [end - start for (_, start, end) in timeline]
-            total_len = sum(sec_len)
-            for (node, start, end) in timeline:
-                share = (end - start) / total_len
-                section_bars.append(max(1, int(round(bars_total * share))))
-            bars = sum(section_bars)
+            time_sigs = pick_time_signatures(prngs["rhythm"], theme, form_nodes)
+            sections: List[Tuple[int, int, int]] = []
+            section_starts: List[int] = []
+            tick_accum = 0
+            for (node, start, end), (ts_num, ts_den) in zip(timeline, time_sigs):
+                dur = end - start
+                beats_per_bar = ts_num * (4 / ts_den)
+                bars = max(1, int(round((dur / 60.0) * (bpm_base / beats_per_bar))))
+                sections.append((bars, ts_num, ts_den))
+                section_starts.append(tick_accum)
+                ticks_per_bar = ppq * ts_num * 4 // ts_den
+                tick_accum += bars * ticks_per_bar
 
             lead_events = build_melody(
                 prngs["melody"],
                 scale_pcs,
-                bars,
+                sections,
                 ppq,
-                ts_num,
-                ts_den,
                 density=0.35 if theme == "glass" else 0.25,
                 base_octave=5 if theme == "glass" else 4,
                 sigil_pcs=sigil_pcs,
@@ -162,22 +179,29 @@ def run_riddle(
             pad_events = build_melody(
                 prngs["melody"],
                 scale_pcs,
-                bars,
+                sections,
                 ppq,
-                ts_num,
-                ts_den,
                 density=0.20 if theme == "glass" else 0.18,
                 base_octave=4,
                 sigil_pcs=sigil_pcs,
             )
-            bass_events = build_bass(prngs["melody"], scale_pcs, bars, ppq, ts_num, ts_den)
-            perc_events = build_perc(prngs["rhythm"], bars, ppq, ts_num, ts_den, theme)
+            bass_events = build_bass(prngs["melody"], scale_pcs, sections, ppq)
+            perc_events = build_perc(prngs["rhythm"], sections, ppq, theme)
 
             mb = MidiBuilder(ppq)
             trk0 = mb.new_track()
             mb.tempo(trk0, 0, bpm_base)
-            mb.time_signature(trk0, 0, ts_num, int(math.log2(ts_den)))
+            first_num, first_den = time_sigs[0]
+            mb.time_signature(trk0, 0, first_num, int(math.log2(first_den)))
             mb.key_signature(trk0, 0, key_root, 0)
+            last_tick = 0
+            last_sig = (first_num, first_den)
+            for tick, (ts_num, ts_den) in zip(section_starts[1:], time_sigs[1:]):
+                if (ts_num, ts_den) != last_sig:
+                    delta = tick - last_tick
+                    mb.time_signature(trk0, delta, ts_num, int(math.log2(ts_den)))
+                    last_tick = tick
+                    last_sig = (ts_num, ts_den)
 
             def write_track(events, ch, program_hint):
                 trk = mb.new_track()

@@ -288,70 +288,70 @@ def pick_time_signature(
 def build_melody(
     prng_mel: Xoshiro256StarStar,
     scale_pcs: List[int],
-    bars: int,
+    sections: List[Tuple[int, int, int]],
     ppq: int,
-    ts_num: int,
-    ts_den: int,
     density: float,
     base_octave: int,
     sigil_pcs: List[int],
 ) -> List[Tuple[int, int, int, int]]:
-    ticks_per_bar = ppq * ts_num * 4 // ts_den
-    beats_per_bar = ts_num * 4 // ts_den
-    ticks_per_beat = ticks_per_bar // beats_per_bar if beats_per_bar else 0
-
-    events = []
-    for bar in range(bars):
-        for beat in range(beats_per_bar):
-            if prng_mel.uniform() < density:
-                note = midi_note_in_scale(
-                    prng_mel, scale_pcs, base_octave * 12, (base_octave + 2) * 12
-                )
-                start = bar * ticks_per_bar + beat * ticks_per_beat
-                dur = int(ticks_per_beat * prng_mel.uniform() * 0.8) or ticks_per_beat // 2
-                vel = prng_mel.randint(60, 120)
-                events.append((start, dur, note, vel))
+    events: List[Tuple[int, int, int, int]] = []
+    tick_offset = 0
+    for bars, ts_num, ts_den in sections:
+        ticks_per_bar = ppq * ts_num * 4 // ts_den
+        beats_per_bar = ts_num * 4 // ts_den
+        ticks_per_beat = ticks_per_bar // beats_per_bar if beats_per_bar else 0
+        for bar in range(bars):
+            for beat in range(beats_per_bar):
+                if prng_mel.uniform() < density:
+                    note = midi_note_in_scale(
+                        prng_mel, scale_pcs, base_octave * 12, (base_octave + 2) * 12
+                    )
+                    start = tick_offset + bar * ticks_per_bar + beat * ticks_per_beat
+                    dur = int(ticks_per_beat * prng_mel.uniform() * 0.8) or ticks_per_beat // 2
+                    vel = prng_mel.randint(60, 120)
+                    events.append((start, dur, note, vel))
+        tick_offset += bars * ticks_per_bar
     return events
 
 
 def build_bass(
     prng: Xoshiro256StarStar,
     scale_pcs: List[int],
-    bars: int,
+    sections: List[Tuple[int, int, int]],
     ppq: int,
-    ts_num: int,
-    ts_den: int,
 ) -> List[Tuple[int, int, int, int]]:
-    ticks_per_bar = ppq * ts_num * 4 // ts_den
-
-    events = []
-    for bar in range(bars):
-        note = midi_note_in_scale(prng, scale_pcs, 36, 60)
-        start = bar * ticks_per_bar
-        dur = ticks_per_bar
-        vel = prng.randint(70, 110)
-        events.append((start, dur, note, vel))
+    events: List[Tuple[int, int, int, int]] = []
+    tick_offset = 0
+    for bars, ts_num, ts_den in sections:
+        ticks_per_bar = ppq * ts_num * 4 // ts_den
+        for bar in range(bars):
+            note = midi_note_in_scale(prng, scale_pcs, 36, 60)
+            start = tick_offset + bar * ticks_per_bar
+            dur = ticks_per_bar
+            vel = prng.randint(70, 110)
+            events.append((start, dur, note, vel))
+        tick_offset += bars * ticks_per_bar
     return events
 
 
 def build_perc(
     prng: Xoshiro256StarStar,
-    bars: int,
+    sections: List[Tuple[int, int, int]],
     ppq: int,
-    ts_num: int,
-    ts_den: int,
     theme: str,
 ) -> List[Tuple[int, int, int, int]]:
-    ticks_per_bar = ppq * ts_num * 4 // ts_den
-    beats_per_bar = ts_num * 4 // ts_den
-
-    events = []
-    pattern = euclidean_rhythm(beats_per_bar, ticks_per_bar)
-    ticks_per_beat = ticks_per_bar // beats_per_bar if beats_per_bar else 0
-    for bar in range(bars):
-        for i, bit in enumerate(pattern):
-            if bit:
-                start = bar * ticks_per_bar + i
-                vel = prng.randint(80, 120)
-                events.append((start, ticks_per_beat // 4 or 1, 0, vel))
+    events: List[Tuple[int, int, int, int]] = []
+    tick_offset = 0
+    for bars, ts_num, ts_den in sections:
+        ticks_per_bar = ppq * ts_num * 4 // ts_den
+        beats_per_bar = ts_num * 4 // ts_den
+        pattern = euclidean_rhythm(beats_per_bar, ticks_per_bar)
+        ticks_per_beat = ticks_per_bar // beats_per_bar if beats_per_bar else 0
+        for bar in range(bars):
+            for i, bit in enumerate(pattern):
+                if bit:
+                    start = tick_offset + bar * ticks_per_bar + i
+                    vel = prng.randint(80, 120)
+                    events.append((start, ticks_per_beat // 4 or 1, 0, vel))
+        tick_offset += bars * ticks_per_bar
     return events
