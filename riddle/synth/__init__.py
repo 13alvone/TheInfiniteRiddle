@@ -381,7 +381,6 @@ def mythic_cipherspray_watermark(src_wav: Path, dst_wav: Path, seed_hex: str) ->
     if params.sampwidth != 3 or params.nchannels != 2:
         raise ValueError("Expected 24-bit stereo WAV")
     pcm16 = audioop.lin2lin(frames, 3, 2)
-    duration = nframes / sr
     tone_hz = 19000.0 if sr >= 48000 else sr*0.39
     amp = 0.02
     bits = bin(int(seed_hex, 16))[2:].zfill(64)
