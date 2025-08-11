@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-import infinite_riddle_root as irr
+import riddle as irr
 
 
 class TestPathResolution(unittest.TestCase):
