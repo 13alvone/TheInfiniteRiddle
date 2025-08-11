@@ -56,8 +56,10 @@ This companion to CONTRIBUTING.md focuses on **developer tooling**: local enviro
 ## 3) Tests
 
 ### 3.1 Unit Tests
-	#!/usr/bin/env bash
-	pytest -q
+        #!/usr/bin/env bash
+        pytest -q --seed deadbeefdeadbeefdeadbeefdeadbeef
+
+Tests include a `--seed` option (see `tests/conftest.py`) for deterministic runs.
 
 ### 3.2 Coverage
 	#!/usr/bin/env bash
