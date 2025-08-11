@@ -176,6 +176,7 @@ def render_audio(output_path: Path, midi_events: Dict[str, List[Tuple[int,int,in
     sub_bass = SubBass(sr)
     drums = NoisePerc(sr, prng)
     limiter = StereoLimiter(ceiling=limiter_ceiling)
+    state = prng.s.copy()
 
     def expand(events):
         seq = []
@@ -290,6 +291,7 @@ def render_audio(output_path: Path, midi_events: Dict[str, List[Tuple[int,int,in
 
     if stem_paths:
         for track, path in stem_paths.items():
+            prng.s = state.copy()
             sub_events = {track: midi_events.get(track, [])}
             render_audio(path, sub_events, bpm, ppq, sr, total_sec, prng, limiter_ceiling, stem_paths=None)
 
