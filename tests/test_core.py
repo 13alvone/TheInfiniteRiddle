@@ -72,3 +72,16 @@ def test_mythic_variants(tmp_path: Path):
         assert out.exists()
         with wave.open(str(out), "rb") as r:
             assert r.getnframes() == nframes
+
+
+def test_pick_time_signature_odd_sequence(root_seed: bytes):
+    prng_single = irr.domain_prngs(root_seed)["rhythm"]
+    ts = irr.pick_time_signature(prng_single, "glass")
+    assert ts[0] % 2 == 1
+
+    prng_seq = irr.domain_prngs(root_seed)["rhythm"]
+    seq = irr.pick_time_signature(prng_seq, "glass", chaotic=True)
+    assert isinstance(seq, list) and seq
+    for num, _ in seq:
+        assert num % 2 == 1
+    assert len(set(seq)) > 1
