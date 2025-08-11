@@ -46,13 +46,13 @@ Themes are not presets. They are weather.
 
 	#!/usr/bin/env bash
 	# Generate one medium-length encounter with an auto theme:
-	python riddle_v0_2.py generate auto ./out --db ./riddle_vault.db --bucket med -v
+        python -m riddle generate auto ./out --db ./riddle_vault.db --bucket med -v
 
-	# Force a theme, keep it short, allow up to 2 mythics:
-	python riddle_v0_2.py generate glass ./out --db ./riddle_vault.db --bucket short --mythic-max 2 -v
+        # Force a theme, keep it short, allow up to 2 mythics:
+        python -m riddle generate glass ./out --db ./riddle_vault.db --bucket short --mythic-max 2 -v
 
-	# Developer reproducibility (dev mode only; commitment stored, not the raw seed):
-	python riddle_v0_2.py generate salt ./out --db ./riddle_vault.db --bucket short -v --seed deadbeefdeadbeefdeadbeefdeadbeef
+        # Developer reproducibility (dev mode only; commitment stored, not the raw seed):
+        python -m riddle generate salt ./out --db ./riddle_vault.db --bucket short -v --seed deadbeefdeadbeefdeadbeefdeadbeef
 
 Artifacts land in `./out`. The Vault is `./riddle_vault.db`. Sidecars end in `.riddle.json`.
 
@@ -85,7 +85,7 @@ Nothing to compile. Keep an SSD nearby if you chase hour-long drones.
 ## CLI (v0.2)
 
 	#!/usr/bin/env bash
-        python riddle_v0_2.py generate <glass|salt|auto> <outdir> \
+        python -m riddle generate <glass|salt|auto> <outdir> \
           --db riddle_vault.db \
           --bucket {short|med|long} \
           [--stems] \
@@ -194,7 +194,7 @@ If you sample the engine sampling itself, you may owe yourself royalties.
 
 ## Development
 
-- Single-file reference: `riddle_v0_2.py` (stdlib-only).  
+- Package reference: `riddle/` (stdlib-only).
 - Dev tooling, CI, and workflows: see **CONTRIBUTING.md** and **CONTRIBUTING.devtools.md**.  
 - Security model, threat surfaces, incident playbook: see **SECURITY.md**.  
 - Agent roles, task graph, contracts: see **AGENTS.md**.  
@@ -241,5 +241,5 @@ If you stare long enough into the spectrogram, the spectrogram rearranges you.
 Now run it.
 
 	#!/usr/bin/env bash
-	python riddle_v0_2.py generate auto ./out --db ./riddle_vault.db --bucket short -v
+        python -m riddle generate auto ./out --db ./riddle_vault.db --bucket short -v
 
