@@ -198,7 +198,8 @@ def render_audio(output_path: Path, midi_events: Dict[str, List[Tuple[int,int,in
         wf.setsampwidth(3)
         wf.setframerate(sr)
         while int(t_sec * sr) < total_samples:
-            t_end = t_sec + block / sr
+            n = min(block, total_samples - int(t_sec * sr))
+            t_end = t_sec + n / sr
             for track in ("lead","pad","bass","perc"):
                 evts = events_timed[track]
                 i = evt_idx[track]
@@ -234,12 +235,12 @@ def render_audio(output_path: Path, midi_events: Dict[str, List[Tuple[int,int,in
                         drums.hit(vel/127.0)
                 evt_idx[track] = i
 
-            L = [0.0]*block
-            R = [0.0]*block
+            L = [0.0] * n
+            R = [0.0] * n
             lfo = math.sin(2*math.pi * 0.02 * t_sec)
             alive_leads = []
             for v in lead_voices:
-                buf = v.render(block, sr, lfo)
+                buf = v.render(n, sr, lfo)
                 if v.active:
                     alive_leads.append(v)
                 for i, s in enumerate(buf):
@@ -249,7 +250,7 @@ def render_audio(output_path: Path, midi_events: Dict[str, List[Tuple[int,int,in
 
             alive_pads = []
             for v in pad_voices:
-                buf = v.render(block, sr, lfo)
+                buf = v.render(n, sr, lfo)
                 if v.active:
                     alive_pads.append(v)
                 for i, s in enumerate(buf):
@@ -257,24 +258,24 @@ def render_audio(output_path: Path, midi_events: Dict[str, List[Tuple[int,int,in
                     R[i] += 0.18 * s
             pad_voices = alive_pads
 
-            bbuf = sub_bass.render(block)
+            bbuf = sub_bass.render(n)
             for i, s in enumerate(bbuf):
                 L[i] += 0.20 * s
                 R[i] += 0.20 * s
 
-            pbuf = drums.render(block)
+            pbuf = drums.render(n)
             for i, s in enumerate(pbuf):
                 L[i] += 0.20 * s
                 R[i] += 0.20 * s
 
-            for i in range(block):
+            for i in range(n):
                 L[i] = softsat(L[i], 1.2)
                 R[i] = softsat(R[i], 1.2)
 
             L, R = limiter.process_block(L, R)
 
             frames = bytearray()
-            for i in range(block):
+            for i in range(n):
                 l = max(-0.999999, min(0.999999, L[i]))
                 r = max(-0.999999, min(0.999999, R[i]))
                 li = int(l * 8388607.0)
