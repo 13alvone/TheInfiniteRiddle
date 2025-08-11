@@ -21,3 +21,12 @@ def test_pick_time_signature_chaotic_list(root_seed: bytes):
     assert isinstance(tss, list) and tss
     for ts in tss:
         assert ts in ODD_METERS
+
+
+def test_pick_time_signatures_sequence(root_seed: bytes):
+    prng = irr.domain_prngs(root_seed)["rhythm"]
+    form_nodes = ["INV", "PRC", "CLM"]
+    seq = irr.pick_time_signatures(prng, "glass", form_nodes)
+    assert len(seq) == len(form_nodes)
+    for ts in seq:
+        assert ts in ODD_METERS
