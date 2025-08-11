@@ -258,37 +258,64 @@ def pick_time_signature(prng: Xoshiro256StarStar, theme: str) -> Tuple[int, int]
     return prng.choice([(4,4),(6,8)])
 
 
-def build_melody(prng_mel: Xoshiro256StarStar, scale_pcs: List[int], bars: int, ppq: int, ts_num: int, ts_den: int,
-                 channel: int, density: float, base_octave: int, sigil_pcs: List[int]) -> List[Tuple[int,int,int,int]]:
+def build_melody(
+    prng_mel: Xoshiro256StarStar,
+    scale_pcs: List[int],
+    bars: int,
+    ppq: int,
+    ts_num: int,
+    ts_den: int,
+    density: float,
+    base_octave: int,
+    sigil_pcs: List[int],
+) -> List[Tuple[int, int, int, int]]:
     events = []
-    beats_per_bar = ts_num * (4/ts_den)
     for bar in range(bars):
         for beat in range(ts_num):
             if prng_mel.uniform() < density:
-                note = midi_note_in_scale(prng_mel, scale_pcs, base_octave*12, (base_octave+2)*12)
-                start = bar*ppq*ts_num + beat*ppq
-                dur = int(ppq * prng_mel.uniform() * 0.8) or ppq//2
-                events.append((start, dur, note, channel))
+                note = midi_note_in_scale(
+                    prng_mel, scale_pcs, base_octave * 12, (base_octave + 2) * 12
+                )
+                start = bar * ppq * ts_num + beat * ppq
+                dur = int(ppq * prng_mel.uniform() * 0.8) or ppq // 2
+                vel = prng_mel.randint(60, 120)
+                events.append((start, dur, note, vel))
     return events
 
 
-def build_bass(prng: Xoshiro256StarStar, scale_pcs: List[int], bars: int, ppq: int, ts_num: int, ts_den: int) -> List[Tuple[int,int,int,int]]:
+def build_bass(
+    prng: Xoshiro256StarStar,
+    scale_pcs: List[int],
+    bars: int,
+    ppq: int,
+    ts_num: int,
+    ts_den: int,
+) -> List[Tuple[int, int, int, int]]:
     events = []
     for bar in range(bars):
         note = midi_note_in_scale(prng, scale_pcs, 36, 60)
-        start = bar*ppq*ts_num
-        dur = ppq*ts_num
-        events.append((start, dur, note, 2))
+        start = bar * ppq * ts_num
+        dur = ppq * ts_num
+        vel = prng.randint(70, 110)
+        events.append((start, dur, note, vel))
     return events
 
 
-def build_perc(prng: Xoshiro256StarStar, bars: int, ppq: int, ts_num: int, ts_den: int, theme: str) -> List[Tuple[int,int,int,int]]:
+def build_perc(
+    prng: Xoshiro256StarStar,
+    bars: int,
+    ppq: int,
+    ts_num: int,
+    ts_den: int,
+    theme: str,
+) -> List[Tuple[int, int, int, int]]:
     events = []
     pulses = ts_num * ppq
     pattern = euclidean_rhythm(ts_num, pulses)
     for bar in range(bars):
         for i, bit in enumerate(pattern):
             if bit:
-                start = bar*pulses + i
-                events.append((start, ppq//4, 0, 3))
+                start = bar * pulses + i
+                vel = prng.randint(80, 120)
+                events.append((start, ppq // 4, 0, vel))
     return events
