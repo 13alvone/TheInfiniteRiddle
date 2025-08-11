@@ -132,7 +132,12 @@ def run_riddle(
             logging.info("[i] Key=%s %s; BPM≈%.1f", key_pc_name, mode_name, bpm_base)
 
             ppq = 480
-            ts_num, ts_den = pick_time_signature(prngs["rhythm"], theme)
+            ts_choice = pick_time_signature(prngs["rhythm"], theme)
+            if isinstance(ts_choice, list):
+                time_sigs = ts_choice
+            else:
+                time_sigs = [ts_choice]
+            ts_num, ts_den = time_sigs[0]
             beats_per_bar = ts_num * (4 / ts_den)
             bars_total = max(1, int((total_sec / 60.0) * (bpm_base / beats_per_bar)))
             section_bars = []
@@ -248,6 +253,7 @@ def run_riddle(
                 "form_path": form_str,
                 "durations": [{"node": n, "start": float(s), "end": float(e)} for (n, s, e) in timeline],
                 "bpm_base": bpm_base,
+                "time_sigs": [f"{n}/{d}" for n, d in time_sigs],
                 "key_mode": {"root_pc": key_root, "root_name": key_pc_name, "mode": mode_name},
                 "sigil_pcs": sigil_pcs,
                 "artifact_hashes": {
@@ -276,18 +282,19 @@ def run_riddle(
                 "presence": 0.5,
                 "hostility": 0.2,
                 "obliquity": 0.6 if theme == "glass" else 0.7,
+                "time_sigs": [f"{n}/{d}" for n, d in time_sigs],
                 "sections": [
                     {
                         "key_root": key_pc_name,
                         "mode": mode_name,
                         "start_sec": float(s),
                         "end_sec": float(e),
-                        "time_sig": f"{ts_num}/{ts_den}",
+                        "time_sig": f"{time_sigs[i % len(time_sigs)][0]}/{time_sigs[i % len(time_sigs)][1]}",
                         "euclid": "E(5,8)|E(7,12)" if theme == "glass" else "E(3,8)|E(5,12)",
                         "ca_rule": 90 if theme == "glass" else 150,
                         "swing": 0.06 if theme == "glass" else -0.04,
                     }
-                    for (n, s, e) in timeline
+                    for i, (n, s, e) in enumerate(timeline)
                 ],
             }
             run_id = vault_insert_run(conn, run_obj)

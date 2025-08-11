@@ -6,7 +6,7 @@ import logging
 import math
 import secrets
 import time
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Union
 
 
 # ----------------------------- Logging Setup -----------------------------
@@ -252,10 +252,37 @@ def ca_gate(rule: int, n: int, seed_bits: int) -> List[int]:
 
 
 # ----------------------------- Composition Helpers -----------------------------
-def pick_time_signature(prng: Xoshiro256StarStar, theme: str) -> Tuple[int, int]:
-    if theme == "glass":
-        return prng.choice([(4,4),(3,4),(5,8)])
-    return prng.choice([(4,4),(6,8)])
+ODD_TIME_SIGNATURES: List[Tuple[Tuple[int, int], float]] = [
+    ((3, 4), 1.0),
+    ((5, 4), 0.9),
+    ((5, 8), 1.2),
+    ((7, 8), 0.8),
+    ((9, 8), 0.6),
+]
+
+
+def pick_time_signature(
+    prng: Xoshiro256StarStar,
+    theme: str,
+    chaotic: bool = False,
+    count: int = 4,
+) -> Union[Tuple[int, int], List[Tuple[int, int]]]:
+    """Pick an odd-meter time signature.
+
+    When ``chaotic`` is True, return a list of distinct odd signatures for
+    later sections. Otherwise return a single weighted choice.
+    ``theme`` is accepted for API compatibility but currently unused.
+    """
+    _ = theme  # API compatibility; theme currently does not affect rhythm
+    pool = ODD_TIME_SIGNATURES.copy()
+    if chaotic:
+        picks: List[Tuple[int, int]] = []
+        for _ in range(min(count, len(pool))):
+            sig = prng.weighted_choice(pool)
+            picks.append(sig)
+            pool = [iw for iw in pool if iw[0] != sig]
+        return picks
+    return prng.weighted_choice(pool)
 
 
 def build_melody(
