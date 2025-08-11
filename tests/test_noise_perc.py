@@ -7,6 +7,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import riddle as irr
+import riddle.synth as synth
+from riddle.core import Xoshiro256StarStar
 
 
 class TestNoisePercDeterminism(unittest.TestCase):
@@ -36,6 +38,21 @@ class TestNoisePercDeterminism(unittest.TestCase):
         perc1 = self.run_once(out1, self.root / "db1.db")
         perc2 = self.run_once(out2, self.root / "db2.db")
         self.assertEqual(perc1.read_bytes(), perc2.read_bytes())
+
+
+class TestNoisePercRender(unittest.TestCase):
+    def test_renders_silence_without_hit(self):
+        prng = Xoshiro256StarStar(b"\x00" * 32)
+        drums = synth.NoisePerc(48000, prng)
+        buf = drums.render(16)
+        self.assertEqual(buf, [0.0] * 16)
+
+    def test_hit_produces_output(self):
+        prng = Xoshiro256StarStar(b"\x00" * 32)
+        drums = synth.NoisePerc(48000, prng)
+        drums.hit(1.0)
+        buf = drums.render(16)
+        self.assertTrue(any(abs(s) > 0 for s in buf))
 
 
 if __name__ == "__main__":
