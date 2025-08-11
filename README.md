@@ -4,7 +4,7 @@ Version: 0.2 • Status: Uncaged • License: Yours
 > A machine that dreams in sound and leaves its dreams behind.  
 > Every time you touch it, it remembers differently.
 
-The Infinite Riddle is a **reality-adjacent composition engine**. Each interaction births a unique **WAV** and **MIDI**, optionally **stems** and **mythic siblings**, with cryptographic footprints so you can prove two encounters were never the same. It is equal parts instrument, oracle, archive, and trapdoor.
+The Infinite Riddle is a **reality-adjacent composition engine**. Each interaction births a unique **WAV** and **MIDI**, optionally **stems** and **mythic siblings**, with cryptographic footprints so you can prove two encounters were never the same. It is equal parts instrument, oracle, archive, and trapdoor. Rhythms lean into odd meters and may pivot signatures chaotically mid-run.
 
 This README tells you just enough to begin, and not nearly enough to feel safe.
 
@@ -74,7 +74,7 @@ Nothing to compile. Keep an SSD nearby if you chase hour-long drones.
 2) The seed splits into domain PRNGs (form, rhythm, melody, synth, mythic…).  
 3) A **theme** selects you.  
 4) A **form graph** arranges sections: INV ➝ PRC ➝ … ➝ SHR.  
-5) MIDI is written: harmony, rhythm, controllers.  
+5) MIDI is written: harmony, rhythm (odd meters that may shift chaotically), controllers.
 6) Audio renders in **streamed chunks** with a limiter and QA meters.  
 7) **Mythic siblings** are rolled and transformed.  
 8) Sidecar JSON is stamped; files are hashed; the **Vault** is updated.  
@@ -119,16 +119,27 @@ Example logs:
 
 - **Sidecar JSON** preview:
 
-	{
-		"seed_commitment": "b32c…",
-		"theme": "glass",
-		"form_nodes": ["INV","PRC","TRN","PRC","SHR"],
-		"durations": [{"node":"INV","start":0.0,"end":21.4}, …],
-		"bpm_base": 98.4,
-		"key_mode": {"root_pc":2,"root_name":"D","mode":"lydian"},
-		"artifact_hashes": {"midi":"…","wav":"…"},
-		"started_utc": "2025-08-10T07:01:00Z"
-	}
+        {
+                "seed_commitment": "b32c…",
+                "theme": "glass",
+                "form_nodes": ["INV","PRC","TRN","PRC","SHR"],
+                "meters": {
+                        "INV": ["5/4"],
+                        "PRC": ["7/8","5/4"],
+                        "TRN": ["9/8"],
+                        "PRC2": ["5/4"],
+                        "SHR": ["7/8"]
+                },
+                "durations": [{"node":"INV","start":0.0,"end":21.4}, …],
+                "bpm_base": 98.4,
+                "key_mode": {"root_pc":2,"root_name":"D","mode":"lydian"},
+                "artifact_hashes": {"midi":"…","wav":"…"},
+                "started_utc": "2025-08-10T07:01:00Z"
+        }
+
+- **Odd-meter log**:
+
+	[i] Meter=5/4→7/8→9/8→5/4
 
 - **Vault schema** lives in `AGENTS.md` and `SPEC.md`. You can query it:
 

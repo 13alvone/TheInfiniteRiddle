@@ -92,6 +92,10 @@ Scope: Audio/MIDI/Video generation & provenance; form/harmony/rhythm grammar; my
 ### Time signatures (per node)
 - Glass: 4/4 (0.35), 5/4 (0.22), 7/8 (0.18), 9/8 (0.12), 11/8 (0.08), 13/8 (0.05).
 - Salt: 7/8 (0.24), 5/4 (0.22), 3/4 (0.18), additive (2+2+3)/8 (0.18), 4/4 (0.18).
+- Base meter drawn from theme list (odd signatures ≥70%).
+- Chaotic shift per bar: Glass p_shift=0.15, Salt p_shift=0.20; on shift, draw anew from same list.
+ - Sidecar `meters` maps node→ordered signatures:
+	"meters": {"INV":["5/4"],"PRC":["7/8","5/4"],"TRN":["9/8"]}
 
 ### Generators
 - Euclidean pulses E(k,n) per track; swing s∈[−0.12,+0.12]:
@@ -267,15 +271,15 @@ Scope: Audio/MIDI/Video generation & provenance; form/harmony/rhythm grammar; my
 	  PRIMARY KEY (run_id, section_idx)
 	);
 
-	CREATE TABLE run_rhythm (
-	  run_id INTEGER REFERENCES runs(id),
-	  section_idx INTEGER,
-	  time_sig TEXT,
-	  euclid TEXT,     -- e.g., "E(5,8)|E(7,12)"
-	  ca_rule INTEGER, -- 90 or 150
-	  swing REAL,
-	  PRIMARY KEY (run_id, section_idx)
-	);
+        CREATE TABLE run_rhythm (
+          run_id INTEGER REFERENCES runs(id),
+          section_idx INTEGER,
+          time_sigs TEXT,  -- JSON array for meter sequence
+          euclid TEXT,     -- e.g., "E(5,8)|E(7,12)"
+          ca_rule INTEGER, -- 90 or 150
+          swing REAL,
+          PRIMARY KEY (run_id, section_idx)
+        );
 
 	-- artifacts catalog
 	CREATE TABLE artifacts (
@@ -333,14 +337,14 @@ Scope: Audio/MIDI/Video generation & provenance; form/harmony/rhythm grammar; my
 
 ### Glass / Refraction
 - Scales/Modes: Lydian, Whole-tone, Messiaen M3; rare 19-EDO ornaments.
-- Rhythm: Euclidean E(5,8), E(7,12); polymeters 5:4, 7:6; crystalline stutters.
+- Rhythm: Euclidean E(5,8), E(7,12); polymeters 5:4, 7:6; crystalline stutters; chaotic meter pivots.
 - Timbre: FM/wavetable bells, inharmonic partials; comb filters; shimmer verbs.
 - Dynamics: wide crest factor; long decays.
 - Video: prismatic glyphs, diffraction lines, spectrogram blooms.
 
 ### Salt / Sealing
 - Scales/Modes: Phrygian, Locrian, Hijaz; Pelog-like pentachords.
-- Rhythm: slow ostinati; additive meters (3+2+2 / 2+2+3); tape-age swing.
+- Rhythm: slow ostinati; additive meters (3+2+2 / 2+2+3); tape-age swing; meter lurches.
 - Timbre: bowed metal, granular sand hiss, subharmonic oscillators, convolved IRs.
 - Dynamics: creeping swells; distant thumps.
 - Video: seal-circles, salt lines; faint runes.
