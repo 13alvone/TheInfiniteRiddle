@@ -34,6 +34,17 @@ __all__ = [
 ]
 
 
+def valid_seed(value: str) -> str:
+    """Validate hexadecimal seed input for CLI."""
+    if len(value) != 32:
+        raise argparse.ArgumentTypeError("seed must be 32 hex characters")
+    try:
+        bytes.fromhex(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("seed must be hexadecimal") from exc
+    return value.lower()
+
+
 def parse_args(argv=None):
     p = argparse.ArgumentParser(
         description="The Infinite Riddle — generate unique WAV/MIDI artifacts with provenance.",
@@ -53,7 +64,7 @@ def parse_args(argv=None):
     g.add_argument("--stems", action="store_true", help="Render individual stems alongside mix.")
     g.add_argument("--mythic-max", type=int, default=2, help="Max mythic variants to attempt.")
     g.add_argument("--lufs-target", type=float, default=-14.0, help="Target loudness metadata.")
-    g.add_argument("--seed", help="Hex seed for reproducible runs.")
+    g.add_argument("--seed", type=valid_seed, help="Hex seed for reproducible runs.")
     g.add_argument("-v", "--verbose", action="count", default=1, help="Increase verbosity (-v or -vv).")
 
     return p.parse_args(argv)
@@ -80,7 +91,11 @@ def run_riddle(theme_req: Optional[str], outdir: Path, db_path: Path, duration_b
         ensure_vault(db_path)
 
         if seed_hex:
-            root_seed = bytes.fromhex(seed_hex)
+            try:
+                root_seed = bytes.fromhex(seed_hex)
+            except ValueError:
+                logging.error("[!] Seed must be 32 hex characters")
+                return
         else:
             entropy = gather_entropy()
             root_seed = blake2b_digest(entropy)
