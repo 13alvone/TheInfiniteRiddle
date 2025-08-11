@@ -141,13 +141,14 @@ class NoisePerc:
         self.prng = prng
         self.env = 0.0
         self.decay = 0.08
-        self.trig = False
 
     def hit(self, strength: float = 1.0):
         self.env = min(1.0, self.env + 0.8 * strength)
-        self.trig = True
 
     def render(self, n: int) -> List[float]:
+        if self.env <= 0.0:
+            return [0.0] * n
+
         out = []
         for _ in range(n):
             rnd = self.prng.randbits(32) & 0xFFFFFFFF
@@ -157,6 +158,9 @@ class NoisePerc:
             noise = ((rnd / 0xFFFFFFFF) * 2.0) - 1.0
             self.env = max(0.0, self.env - (1.0 / (self.sr * self.decay)))
             out.append(self.env * 0.5 * noise)
+            if self.env <= 0.0:
+                out.extend([0.0] * (n - len(out)))
+                break
         return out
 
 
