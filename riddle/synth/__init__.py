@@ -6,7 +6,8 @@ import struct
 import wave
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-import secrets
+
+from ..core import Xoshiro256StarStar
 
 # ----------------------------- Simple Synth Rack -----------------------------
 class StereoLimiter:
@@ -135,8 +136,9 @@ class SubBass:
 
 
 class NoisePerc:
-    def __init__(self, sr: int):
+    def __init__(self, sr: int, prng: Xoshiro256StarStar):
         self.sr = sr
+        self.prng = prng
         self.env = 0.0
         self.decay = 0.08
         self.trig = False
@@ -148,7 +150,7 @@ class NoisePerc:
     def render(self, n: int) -> List[float]:
         out = []
         for _ in range(n):
-            rnd = secrets.randbits(32) & 0xFFFFFFFF
+            rnd = self.prng.randbits(32) & 0xFFFFFFFF
             rnd = (rnd ^ (rnd << 13)) & 0xFFFFFFFF
             rnd = (rnd ^ (rnd >> 17)) & 0xFFFFFFFF
             rnd = (rnd ^ (rnd << 5)) & 0xFFFFFFFF
@@ -160,7 +162,8 @@ class NoisePerc:
 
 # ----------------------------- Renderer -----------------------------
 def render_audio(output_path: Path, midi_events: Dict[str, List[Tuple[int,int,int,int]]], bpm: float,
-                 ppq: int, sr: int, total_sec: int, limiter_ceiling: float = 0.97,
+                 ppq: int, sr: int, total_sec: int, prng: Xoshiro256StarStar,
+                 limiter_ceiling: float = 0.97,
                  stem_paths: Optional[Dict[str, Path]] = None) -> None:
     s_per_tick = 60.0 / bpm / ppq
     lead = midi_events.get("lead", [])
@@ -171,7 +174,7 @@ def render_audio(output_path: Path, midi_events: Dict[str, List[Tuple[int,int,in
     lead_voices: List[Voice] = []
     pad_voices: List[Voice] = []
     sub_bass = SubBass(sr)
-    drums = NoisePerc(sr)
+    drums = NoisePerc(sr, prng)
     limiter = StereoLimiter(ceiling=limiter_ceiling)
 
     def expand(events):
@@ -288,7 +291,7 @@ def render_audio(output_path: Path, midi_events: Dict[str, List[Tuple[int,int,in
     if stem_paths:
         for track, path in stem_paths.items():
             sub_events = {track: midi_events.get(track, [])}
-            render_audio(path, sub_events, bpm, ppq, sr, total_sec, limiter_ceiling, stem_paths=None)
+            render_audio(path, sub_events, bpm, ppq, sr, total_sec, prng, limiter_ceiling, stem_paths=None)
 
 
 # ----------------------------- Mythic Variants -----------------------------
