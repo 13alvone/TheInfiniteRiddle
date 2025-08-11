@@ -24,6 +24,7 @@ from .core import (
     build_bass,
     build_perc,
     NOTE_NAMES_SHARP,
+    pitch_class_to_sf,
 )
 from .io import MidiBuilder, sha256_of_file, seed_commitment, timestamp_now_utc
 from .synth import (
@@ -41,6 +42,7 @@ __all__ = [
     "pick_theme", "pick_key", "scale_pitches", "sample_duration_seconds",
     "pick_form", "pick_time_signature", "pick_time_signatures",
     "build_melody", "build_bass", "build_perc", "NOTE_NAMES_SHARP",
+    "pitch_class_to_sf",
     "MidiBuilder", "sha256_of_file",
     "seed_commitment", "timestamp_now_utc", "render_audio", "mythic_backmask",
     "mythic_ashen_bitcrush", "mythic_mirrorsalt_ms", "mythic_liminal_bed",
@@ -196,7 +198,7 @@ def run_riddle(
             mb.tempo(trk0, 0, bpm_base)
             first_num, first_den = time_sigs[0]
             mb.time_signature(trk0, 0, first_num, int(math.log2(first_den)))
-            mb.key_signature(trk0, 0, key_root, 0)
+            mb.key_signature(trk0, 0, pitch_class_to_sf(key_root), 0)
             last_tick = 0
             last_sig = (first_num, first_den)
             for tick, (ts_num, ts_den) in zip(section_starts[1:], time_sigs[1:]):
