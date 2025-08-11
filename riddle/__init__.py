@@ -39,14 +39,23 @@ def parse_args(argv=None):
         description="The Infinite Riddle — generate unique WAV/MIDI artifacts with provenance.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    p.add_argument("theme", choices=["glass", "salt", "auto"], help="Select theme or auto.")
-    p.add_argument("outdir", help="Output directory for artifacts.")
-    p.add_argument("--db", default="riddle_vault.db", help="Path to SQLite vault.")
-    p.add_argument("--bucket", choices=["short", "med", "long"], default=None, help="Force duration bucket.")
-    p.add_argument("--stems", action="store_true", help="Render individual stems alongside mix.")
-    p.add_argument("--mythic-max", type=int, default=2, help="Max mythic variants to attempt.")
-    p.add_argument("--lufs-target", type=float, default=-14.0, help="Target loudness metadata.")
-    p.add_argument("-v", "--verbose", action="count", default=1, help="Increase verbosity (-v or -vv).")
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    g = sub.add_parser(
+        "generate",
+        help="generate WAV/MIDI artifacts",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    g.add_argument("theme", choices=["glass", "salt", "auto"], help="Select theme or auto.")
+    g.add_argument("outdir", help="Output directory for artifacts.")
+    g.add_argument("--db", default="riddle_vault.db", help="Path to SQLite vault.")
+    g.add_argument("--bucket", choices=["short", "med", "long"], default=None, help="Force duration bucket.")
+    g.add_argument("--stems", action="store_true", help="Render individual stems alongside mix.")
+    g.add_argument("--mythic-max", type=int, default=2, help="Max mythic variants to attempt.")
+    g.add_argument("--lufs-target", type=float, default=-14.0, help="Target loudness metadata.")
+    g.add_argument("--seed", help="Hex seed for reproducible runs.")
+    g.add_argument("-v", "--verbose", action="count", default=1, help="Increase verbosity (-v or -vv).")
+
     return p.parse_args(argv)
 
 
@@ -64,14 +73,17 @@ def _resolve_artifact_paths(outdir_arg: str, db_arg: str, root: Path) -> Tuple[P
 
 
 def run_riddle(theme_req: Optional[str], outdir: Path, db_path: Path, duration_bucket: Optional[str],
-               stems: bool, mythic_max: int, lufs_target: float, verbosity: int) -> None:
+               stems: bool, mythic_max: int, lufs_target: float, seed_hex: Optional[str], verbosity: int) -> None:
     try:
         setup_logging(verbosity)
         logging.info("[i] Starting The Infinite Riddle v0.1")
         ensure_vault(db_path)
 
-        entropy = gather_entropy()
-        root_seed = blake2b_digest(entropy)
+        if seed_hex:
+            root_seed = bytes.fromhex(seed_hex)
+        else:
+            entropy = gather_entropy()
+            root_seed = blake2b_digest(entropy)
         commit = seed_commitment(root_seed)
         prngs = domain_prngs(root_seed)
 

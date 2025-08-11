@@ -21,7 +21,7 @@ class TestPathResolution(unittest.TestCase):
         self.tmp.cleanup()
 
     def test_relative_paths(self):
-        args = irr.parse_args(["glass", "relout", "--db", "vault.db"])
+        args = irr.parse_args(["generate", "glass", "relout", "--db", "vault.db"])
         outdir, db = irr._resolve_artifact_paths(args.outdir, args.db, self.root)
         self.assertEqual(outdir, self.root / "relout")
         self.assertEqual(db, self.root / "vault.db")
@@ -31,7 +31,7 @@ class TestPathResolution(unittest.TestCase):
     def test_absolute_paths(self):
         abs_out = self.root / "absout"
         abs_db = self.root / "dbdir" / "vault.db"
-        args = irr.parse_args(["glass", str(abs_out), "--db", str(abs_db)])
+        args = irr.parse_args(["generate", "glass", str(abs_out), "--db", str(abs_db)])
         outdir, db = irr._resolve_artifact_paths(args.outdir, args.db, self.root)
         self.assertEqual(outdir, abs_out)
         self.assertEqual(db, abs_db)
@@ -39,10 +39,10 @@ class TestPathResolution(unittest.TestCase):
         self.assertTrue(db.parent.is_dir())
 
     def test_traversal_rejected(self):
-        args = irr.parse_args(["glass", "../escape", "--db", "vault.db"])
+        args = irr.parse_args(["generate", "glass", "../escape", "--db", "vault.db"])
         with self.assertRaises(ValueError):
             irr._resolve_artifact_paths(args.outdir, args.db, self.root)
-        args = irr.parse_args(["glass", "relout", "--db", "../vault.db"])
+        args = irr.parse_args(["generate", "glass", "relout", "--db", "../vault.db"])
         with self.assertRaises(ValueError):
             irr._resolve_artifact_paths(args.outdir, args.db, self.root)
 
