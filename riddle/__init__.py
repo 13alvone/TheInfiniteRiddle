@@ -191,7 +191,7 @@ def run_riddle(theme_req: Optional[str], outdir: Path, db_path: Path, duration_b
         logging.info("[i] MIDI written: %s", midi_path.name)
 
         midi_dict = {"lead":lead_events, "pad":pad_events, "bass":bass_events, "perc":perc_events}
-        render_audio(wav_path, midi_dict, bpm_base, ppq, 48000, total_sec, stem_paths=stem_paths if stems else None)
+        render_audio(wav_path, midi_dict, bpm_base, ppq, 48000, total_sec, prngs["synth"], stem_paths=stem_paths if stems else None)
         logging.info("[i] WAV written: %s", wav_path.name)
         if stems:
             for p in stem_paths.values():
