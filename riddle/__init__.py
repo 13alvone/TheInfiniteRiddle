@@ -116,11 +116,28 @@ def run_riddle(theme_req: Optional[str], outdir: Path, db_path: Path, duration_b
             section_bars.append(max(1, int(round(bars_total * share))))
         bars = sum(section_bars)
 
-        lead_events = build_melody(prngs["melody"], scale_pcs, bars, ppq, ts_num, ts_den, channel=0,
-                                   density=0.35 if theme=="glass" else 0.25, base_octave=5 if theme=="glass" else 4,
-                                   sigil_pcs=sigil_pcs)
-        pad_events  = build_melody(prngs["melody"], scale_pcs, bars, ppq, ts_num, ts_den, channel=1,
-                                   density=0.20 if theme=="glass" else 0.18, base_octave=4, sigil_pcs=sigil_pcs)
+        lead_events = build_melody(
+            prngs["melody"],
+            scale_pcs,
+            bars,
+            ppq,
+            ts_num,
+            ts_den,
+            density=0.35 if theme == "glass" else 0.25,
+            base_octave=5 if theme == "glass" else 4,
+            sigil_pcs=sigil_pcs,
+        )
+        pad_events = build_melody(
+            prngs["melody"],
+            scale_pcs,
+            bars,
+            ppq,
+            ts_num,
+            ts_den,
+            density=0.20 if theme == "glass" else 0.18,
+            base_octave=4,
+            sigil_pcs=sigil_pcs,
+        )
         bass_events = build_bass(prngs["melody"], scale_pcs, bars, ppq, ts_num, ts_den)
         perc_events = build_perc(prngs["rhythm"], bars, ppq, ts_num, ts_den, theme)
 
