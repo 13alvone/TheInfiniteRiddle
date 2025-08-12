@@ -85,6 +85,21 @@ def parse_args(argv=None):
     g.add_argument("--seed", type=valid_seed, help="Hex seed for reproducible runs.")
     g.add_argument("-v", "--verbose", action="count", default=1, help="Increase verbosity (-v or -vv).")
 
+    s = sub.add_parser(
+        "spin",
+        help="generate with randomized defaults",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    s.add_argument("--outdir", default=None, help="Output directory for artifacts.")
+    s.add_argument("--db", default=None, help="Path to SQLite vault.")
+    s.add_argument("--theme", choices=["glass", "salt"], default=None, help="Force theme.")
+    s.add_argument("--bucket", choices=["short", "med", "long"], default=None, help="Force duration bucket.")
+    s.add_argument("--stems", action="store_true", default=None, help="Render individual stems alongside mix.")
+    s.add_argument("--mythic-max", type=int, default=None, help="Max mythic variants to attempt.")
+    s.add_argument("--lufs-target", type=float, default=None, help="Target loudness metadata.")
+    s.add_argument("--seed", type=valid_seed, default=None, help="Hex seed for reproducible runs.")
+    s.add_argument("-v", "--verbose", action="count", default=1, help="Increase verbosity (-v or -vv).")
+
     return p.parse_args(argv)
 
 

@@ -54,6 +54,12 @@ Themes are not presets. They are weather.
         # Developer reproducibility (dev mode only; commitment stored, not the raw seed):
         python -m riddle generate salt ./out --db ./riddle_vault.db --bucket short -v --seed deadbeefdeadbeefdeadbeefdeadbeef
 
+        # Let the engine choose everything at random:
+        python -m riddle spin
+
+        # Lock theme and duration bucket while randomizing the rest:
+        python -m riddle spin --theme glass --bucket med
+
 Artifacts land in `./out`. The Vault is `./riddle_vault.db`. Sidecars end in `.riddle.json`.
 
 ---
