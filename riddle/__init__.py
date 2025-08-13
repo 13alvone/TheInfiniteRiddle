@@ -162,7 +162,7 @@ def run_riddle(
             total_sec, bucket = sample_duration_seconds(
                 prngs["form"], theme, duration_bucket
             )
-            form_nodes, timeline = pick_form(prngs["form"], theme, total_sec)
+            form_nodes, timeline, section_pcts = pick_form(prngs["form"], theme, total_sec)
             logging.info(
                 "[i] Theme=%s Bucket=%s Duration=%ds Form=%s",
                 theme,
@@ -307,7 +307,15 @@ def run_riddle(
                 "duration_bucket": bucket,
                 "form_nodes": form_nodes,
                 "form_path": form_str,
-                "durations": [{"node": n, "start": float(s), "end": float(e)} for (n, s, e) in timeline],
+                "durations": [
+                    {
+                        "node": n,
+                        "start": float(s),
+                        "end": float(e),
+                        "pct": section_pcts[i],
+                    }
+                    for i, (n, s, e) in enumerate(timeline)
+                ],
                 "bpm_base": bpm_base,
                 "time_sigs": [f"{n}/{d}" for n, d in time_sigs],
                 "key_mode": {"root_pc": key_root, "root_name": key_pc_name, "mode": mode_name},

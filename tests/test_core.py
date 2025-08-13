@@ -35,14 +35,31 @@ def test_duration_sampling_deterministic(root_seed: bytes):
 def test_form_generation_deterministic(root_seed: bytes):
     prng1 = irr.domain_prngs(root_seed)["form"]
     total, bucket = irr.sample_duration_seconds(prng1, "glass", None)
-    path1, timeline1 = irr.pick_form(prng1, "glass", total)
+    path1, timeline1, pct1 = irr.pick_form(prng1, "glass", total)
     prng2 = irr.domain_prngs(root_seed)["form"]
     total2, bucket2 = irr.sample_duration_seconds(prng2, "glass", None)
-    path2, timeline2 = irr.pick_form(prng2, "glass", total2)
+    path2, timeline2, pct2 = irr.pick_form(prng2, "glass", total2)
     assert total == total2 and bucket == bucket2
     assert path1 == path2
     assert timeline1 == timeline2
+    assert pct1 == pct2
     assert abs(timeline1[-1][2] - total) < 1e-6
+
+
+def test_form_paths_and_ranges(root_seed: bytes):
+    from riddle.core import FORM_PATHS, SECTION_PCT_RANGES
+
+    for theme in ("glass", "salt"):
+        prng = irr.domain_prngs(root_seed)["form"]
+        total, _ = irr.sample_duration_seconds(prng, theme, None)
+        path, timeline, pcts = irr.pick_form(prng, theme, total)
+        allowed = [p for p, _ in FORM_PATHS[theme]]
+        assert path in allowed
+        ranges = SECTION_PCT_RANGES[theme]
+        for node, pct in zip(path, pcts):
+            mn, mx = ranges[node]
+            assert mn <= pct <= mx
+        assert abs(timeline[-1][2] - total) < 1e-6
 
 
 def test_mythic_variants(tmp_path: Path):
