@@ -7,6 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import riddle as irr
+from riddle.core import SECTION_PCT_RANGES
 
 
 @pytest.fixture
@@ -32,6 +33,16 @@ def test_sidecar_fields(short_run: Path):
     data = json.loads(sidecars[0].read_text())
     for field in ("seed_commitment", "theme", "duration_bucket", "form_nodes", "artifact_hashes"):
         assert field in data
+    assert "durations" in data and data["durations"]
+    assert all("pct" in seg for seg in data["durations"])
+
+
+def test_sidecar_pct_ranges(short_run: Path):
+    sidecar = json.loads(next(short_run.glob("*.riddle.json")).read_text())
+    ranges = SECTION_PCT_RANGES[sidecar["theme"]]
+    for seg in sidecar["durations"]:
+        mn, mx = ranges[seg["node"]]
+        assert mn <= seg["pct"] <= mx
 
 
 def test_seed_repro(tmp_path: Path):

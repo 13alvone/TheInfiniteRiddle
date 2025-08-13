@@ -218,23 +218,81 @@ def sample_duration_seconds(
 
 
 # ----------------------------- Form Generation -----------------------------
-def pick_form(prng_form: Xoshiro256StarStar, theme: str, total_sec: int) -> Tuple[List[str], List[Tuple[str, float, float]]]:
-    nodes = ["INV","PRC","TRN","CLM","SHR"]
-    path = []
-    timeline = []
+FORM_PATHS: Dict[str, List[Tuple[List[str], float]]] = {
+    "glass": [
+        (["INV", "PRC", "TRN", "PRC", "SHR"], 0.32),
+        (["INV", "PRC", "BRK", "TRN", "PRC", "SHR"], 0.28),
+        (["INV", "CLM", "PRC", "TRN", "SHR"], 0.18),
+        (["INV", "PRC", "CLM", "SHR"], 0.12),
+        (["INV", "TRN", "PRC", "TRN", "SHR"], 0.10),
+    ],
+    "salt": [
+        (["INV", "PRC", "CLM", "SHR"], 0.34),
+        (["INV", "CLM", "PRC", "CLM", "SHR"], 0.26),
+        (["INV", "PRC", "BRK", "CLM", "SHR"], 0.22),
+        (["INV", "CLM", "TRN", "CLM", "SHR"], 0.18),
+    ],
+}
+
+SECTION_PCT_RANGES: Dict[str, Dict[str, Tuple[float, float]]] = {
+    "glass": {
+        "INV": (12.0, 20.0),
+        "PRC": (20.0, 35.0),
+        "BRK": (8.0, 15.0),
+        "TRN": (10.0, 18.0),
+        "CLM": (10.0, 25.0),
+        "SHR": (8.0, 15.0),
+    },
+    "salt": {
+        "INV": (10.0, 18.0),
+        "PRC": (18.0, 30.0),
+        "BRK": (6.0, 12.0),
+        "TRN": (8.0, 15.0),
+        "CLM": (22.0, 40.0),
+        "SHR": (8.0, 15.0),
+    },
+}
+
+
+def pick_form(
+    prng_form: Xoshiro256StarStar, theme: str, total_sec: int
+) -> Tuple[List[str], List[Tuple[str, float, float]], List[float]]:
+    """Select a form path and allocate section durations.
+
+    Returns the list of nodes, timeline with absolute seconds, and
+    corresponding percentage allocations per section.
+    """
+    path = prng_form.weighted_choice(FORM_PATHS[theme])
+    pct_ranges = SECTION_PCT_RANGES[theme]
+
+    percentages: List[float] = []
+    remaining = 100.0
+    for idx, node in enumerate(path):
+        min_pct, max_pct = pct_ranges[node]
+        remaining_nodes = path[idx + 1 :]
+        min_remaining = sum(pct_ranges[n][0] for n in remaining_nodes)
+        max_remaining = sum(pct_ranges[n][1] for n in remaining_nodes)
+        if idx == len(path) - 1:
+            pct = remaining
+        else:
+            lower = max(min_pct, remaining - max_remaining)
+            upper = min(max_pct, remaining - min_remaining)
+            if lower > upper:
+                lower, upper = min_pct, max_pct
+            pct = prng_form.uniform() * (upper - lower) + lower
+        percentages.append(pct)
+        remaining -= pct
+
+    timeline: List[Tuple[str, float, float]] = []
     t = 0.0
-    remaining = total_sec
-    while remaining > 0:
-        node = prng_form.choice(nodes)
-        dur = max(1.0, remaining * prng_form.uniform()*0.6 + remaining*0.2)
-        path.append(node)
-        timeline.append((node, t, t+dur))
+    for node, pct in zip(path, percentages):
+        dur = total_sec * (pct / 100.0)
+        timeline.append((node, t, t + dur))
         t += dur
-        remaining -= dur
     if timeline:
         node, start, _ = timeline[-1]
         timeline[-1] = (node, start, float(total_sec))
-    return path, timeline
+    return path, timeline, percentages
 
 
 # ----------------------------- Euclidean Rhythm -----------------------------
