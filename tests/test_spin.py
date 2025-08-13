@@ -59,17 +59,32 @@ class TestSpin(unittest.TestCase):
     @mock.patch("riddle.__main__.run_riddle")
     def test_random_defaults(self, mock_run, mock_resolve):
         mock_resolve.return_value = (self.root / "out", self.root / "db.db")
-        with mock.patch.object(sys, "argv", ["riddle", "spin"]):
+        argv = ["riddle", "spin"]
+        with mock.patch.object(sys, "argv", argv):
             riddle_main.main()
-        args = mock_run.call_args[0]
-        theme, _, _, bucket, stems, mythic_max, lufs_target, seed, _ = args
-        self.assertIn(theme, ["glass", "salt"])
-        self.assertIn(bucket, ["short", "med", "long"])
-        self.assertIsInstance(stems, bool)
-        self.assertIsInstance(mythic_max, int)
-        self.assertIsInstance(lufs_target, float)
-        self.assertEqual(len(seed), 32)
-        self.assertTrue(all(c in "0123456789abcdef" for c in seed))
+        args1 = mock_run.call_args_list[-1][0]
+        with mock.patch.object(sys, "argv", argv):
+            riddle_main.main()
+        args2 = mock_run.call_args_list[-1][0]
+
+        def unpack(args):
+            theme, _, _, bucket, stems, mythic_max, lufs_target, seed, _ = args
+            return theme, bucket, stems, mythic_max, lufs_target, seed
+
+        params1 = unpack(args1)
+        params2 = unpack(args2)
+
+        for params in (params1, params2):
+            theme, bucket, stems, mythic_max, lufs_target, seed = params
+            self.assertIn(theme, ["glass", "salt"])
+            self.assertIn(bucket, ["short", "med", "long"])
+            self.assertIsInstance(stems, bool)
+            self.assertIsInstance(mythic_max, int)
+            self.assertIsInstance(lufs_target, float)
+            self.assertEqual(len(seed), 32)
+            self.assertTrue(all(c in "0123456789abcdef" for c in seed))
+
+        self.assertNotEqual(params1, params2)
 
 
 if __name__ == "__main__":
