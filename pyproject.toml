@@ -1,0 +1,15 @@
+ [build-system]
+ requires = ["setuptools>=61"]
+ build-backend = "setuptools.build_meta"
+
+ [project]
+ name = "the-infinite-riddle"
+ version = "0.2"
+ description = "The Infinite Riddle composition engine"
+ readme = "README.md"
+ requires-python = ">=3.11"
+ authors = [{ name = "The Infinite Riddle Core" }]
+
+ [project.scripts]
+ riddle = "riddle.__main__:main"
+

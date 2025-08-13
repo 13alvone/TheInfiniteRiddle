@@ -46,19 +46,19 @@ Themes are not presets. They are weather.
 
 	#!/usr/bin/env bash
 	# Generate one medium-length encounter with an auto theme:
-        python -m riddle generate auto ./out --db ./riddle_vault.db --bucket med -v
+        riddle generate auto ./out --db ./riddle_vault.db --bucket med -v
 
         # Force a theme, keep it short, allow up to 2 mythics:
-        python -m riddle generate glass ./out --db ./riddle_vault.db --bucket short --mythic-max 2 -v
+        riddle generate glass ./out --db ./riddle_vault.db --bucket short --mythic-max 2 -v
 
         # Developer reproducibility (dev mode only; commitment stored, not the raw seed):
-        python -m riddle generate salt ./out --db ./riddle_vault.db --bucket short -v --seed deadbeefdeadbeefdeadbeefdeadbeef
+        riddle generate salt ./out --db ./riddle_vault.db --bucket short -v --seed deadbeefdeadbeefdeadbeefdeadbeef
 
         # Let the engine choose everything at random:
-        python -m riddle spin
+        riddle spin
 
         # Lock theme and duration bucket while randomizing the rest:
-        python -m riddle spin --theme glass --bucket med
+        riddle spin --theme glass --bucket med
 
 Artifacts land in `./out`. The Vault is `./riddle_vault.db`. Sidecars end in `.riddle.json`.
 
@@ -69,6 +69,14 @@ Artifacts land in `./out`. The Vault is `./riddle_vault.db`. Sidecars end in `.r
 - **Python** ≥ 3.11  
 - macOS/Linux/WSL preferred. Windows works with long-paths enabled.  
 - **No runtime dependencies** for audio/MIDI/DB. (Dev tools are optional; see CONTRIBUTING.devtools.md.)
+
+Install from source:
+
+	pip install .
+
+Once installed, let the engine choose everything at random:
+
+	riddle spin
 
 Nothing to compile. Keep an SSD nearby if you chase hour-long drones.
 
@@ -91,7 +99,7 @@ Nothing to compile. Keep an SSD nearby if you chase hour-long drones.
 ## CLI (v0.2)
 
 	#!/usr/bin/env bash
-        python -m riddle generate <glass|salt|auto> <outdir> \
+        riddle generate <glass|salt|auto> <outdir> \
           --db riddle_vault.db \
           --bucket {short|med|long} \
           [--stems] \
@@ -255,5 +263,5 @@ If you stare long enough into the spectrogram, the spectrogram rearranges you.
 Now run it.
 
 	#!/usr/bin/env bash
-        python -m riddle generate auto ./out --db ./riddle_vault.db --bucket short -v
+        riddle generate auto ./out --db ./riddle_vault.db --bucket short -v
 
