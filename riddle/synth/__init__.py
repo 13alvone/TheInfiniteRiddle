@@ -165,22 +165,32 @@ class NoisePerc:
 
 
 # ----------------------------- Renderer -----------------------------
-def render_audio(output_path: Path, midi_events: Dict[str, List[Tuple[int,int,int,int]]], bpm: float,
-                 ppq: int, sr: int, total_sec: int, prng: Xoshiro256StarStar,
-                 limiter_ceiling: float = 0.97,
-                 stem_paths: Optional[Dict[str, Path]] = None) -> None:
+def render_audio(
+    output_path: Path,
+    midi_events: Dict[str, List[Tuple[int, int, int, int]]],
+    bpm: float,
+    ppq: int,
+    sr: int,
+    total_sec: int,
+    prng_audio: Xoshiro256StarStar,
+    prng_ctrl: Xoshiro256StarStar,
+    limiter_ceiling: float = 0.97,
+    stem_paths: Optional[Dict[str, Path]] = None,
+) -> None:
     s_per_tick = 60.0 / bpm / ppq
     lead = midi_events.get("lead", [])
-    pad  = midi_events.get("pad", [])
+    pad = midi_events.get("pad", [])
     bass = midi_events.get("bass", [])
     perc = midi_events.get("perc", [])
 
     lead_voices: List[Voice] = []
     pad_voices: List[Voice] = []
     sub_bass = SubBass(sr)
-    drums = NoisePerc(sr, prng)
+    drums = NoisePerc(sr, prng_audio)
     limiter = StereoLimiter(ceiling=limiter_ceiling)
-    state = prng.s.copy()
+    state_audio = prng_audio.s.copy()
+    state_ctrl = prng_ctrl.s.copy()
+    lfo_phase = prng_ctrl.uniform() * 2 * math.pi
 
     def expand(events):
         seq = []
@@ -245,7 +255,7 @@ def render_audio(output_path: Path, midi_events: Dict[str, List[Tuple[int,int,in
 
             L = [0.0] * n
             R = [0.0] * n
-            lfo = math.sin(2*math.pi * 0.02 * t_sec)
+            lfo = math.sin(2 * math.pi * 0.02 * t_sec + lfo_phase)
             alive_leads = []
             for v in lead_voices:
                 buf = v.render(n, sr, lfo)
@@ -295,9 +305,21 @@ def render_audio(output_path: Path, midi_events: Dict[str, List[Tuple[int,int,in
 
     if stem_paths:
         for track, path in stem_paths.items():
-            prng.s = state.copy()
+            prng_audio.s = state_audio.copy()
+            prng_ctrl.s = state_ctrl.copy()
             sub_events = {track: midi_events.get(track, [])}
-            render_audio(path, sub_events, bpm, ppq, sr, total_sec, prng, limiter_ceiling, stem_paths=None)
+            render_audio(
+                path,
+                sub_events,
+                bpm,
+                ppq,
+                sr,
+                total_sec,
+                prng_audio,
+                prng_ctrl,
+                limiter_ceiling,
+                stem_paths=None,
+            )
 
 
 # ----------------------------- Mythic Variants -----------------------------

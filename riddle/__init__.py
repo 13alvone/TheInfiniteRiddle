@@ -155,6 +155,8 @@ def run_riddle(
                 root_seed = blake2b_digest(entropy)
             commit = seed_commitment(root_seed)
             prngs = domain_prngs(root_seed)
+            prng_ctrl = prngs["ctrl"]
+            prng_video = prngs["video"]  # reserved for future modules
 
             theme = pick_theme(prngs["names"], theme_req)
             total_sec = sample_duration_seconds(prngs["form"], theme, duration_bucket)
@@ -278,6 +280,7 @@ def run_riddle(
                 48000,
                 total_sec,
                 prngs["synth"],
+                prng_ctrl,
                 stem_paths=stem_paths if stems else None,
             )
             logging.info("[i] WAV written: %s", wav_path.name)

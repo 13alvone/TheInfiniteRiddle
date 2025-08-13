@@ -22,7 +22,9 @@ class TestStemMixMatch(unittest.TestCase):
                 "bass": root / "bass.wav",
                 "perc": root / "perc.wav",
             }
-            prng = irr.domain_prngs(bytes.fromhex("feedface" * 8))["synth"]
+            prngs = irr.domain_prngs(bytes.fromhex("feedface" * 8))
+            prng = prngs["synth"]
+            prng_ctrl = prngs["ctrl"]
             midi = {
                 "lead": [],
                 "pad": [],
@@ -37,6 +39,7 @@ class TestStemMixMatch(unittest.TestCase):
                 8000,
                 1,
                 prng,
+                prng_ctrl,
                 stem_paths=stem_paths,
             )
 

@@ -85,3 +85,19 @@ def test_pick_time_signature_odd_sequence(root_seed: bytes):
     for num, _ in seq:
         assert num % 2 == 1
     assert len(set(seq)) > 1
+
+
+def test_prng_ctrl_deterministic(root_seed: bytes):
+    prng1 = irr.domain_prngs(root_seed)["ctrl"]
+    prng2 = irr.domain_prngs(root_seed)["ctrl"]
+    vals1 = [prng1.uniform() for _ in range(3)]
+    vals2 = [prng2.uniform() for _ in range(3)]
+    assert vals1 == vals2
+
+
+def test_prng_video_deterministic(root_seed: bytes):
+    prng1 = irr.domain_prngs(root_seed)["video"]
+    prng2 = irr.domain_prngs(root_seed)["video"]
+    vals1 = [prng1.randbits(64) for _ in range(3)]
+    vals2 = [prng2.randbits(64) for _ in range(3)]
+    assert vals1 == vals2
