@@ -351,13 +351,27 @@ def ca_gate(rule: int, n: int, seed_bits: int) -> List[int]:
 
 
 # ----------------------------- Composition Helpers -----------------------------
-ODD_TIME_SIGNATURES: List[Tuple[Tuple[int, int], float]] = [
-    ((3, 4), 1.0),
-    ((5, 4), 0.9),
-    ((5, 8), 1.2),
-    ((7, 8), 0.8),
-    ((9, 8), 0.6),
-]
+# Theme-specific time signature tables and shift probabilities
+TIME_SIGNATURE_TABLES: Dict[str, List[Tuple[Tuple[int, int], float]]] = {
+    "glass": [
+        ((4, 4), 0.35),
+        ((5, 4), 0.22),
+        ((7, 8), 0.18),
+        ((9, 8), 0.12),
+        ((11, 8), 0.08),
+        ((13, 8), 0.05),
+    ],
+    "salt": [
+        ((7, 8), 0.24),
+        ((5, 4), 0.22),
+        ((3, 4), 0.18),
+        # Additive (2+2+3)/8 grouped as another 7/8 weight
+        ((7, 8), 0.18),
+        ((4, 4), 0.18),
+    ],
+}
+
+TIME_SIGNATURE_SHIFT: Dict[str, float] = {"glass": 0.15, "salt": 0.20}
 
 
 def pick_time_signature(
@@ -366,22 +380,25 @@ def pick_time_signature(
     chaotic: bool = False,
     count: int = 4,
 ) -> Union[Tuple[int, int], List[Tuple[int, int]]]:
-    """Pick an odd-meter time signature.
+    """Pick a time signature for the given theme.
 
-    When ``chaotic`` is True, return a list of distinct odd signatures for
-    later sections. Otherwise return a single weighted choice.
-    ``theme`` is accepted for API compatibility but currently unused.
+    When ``chaotic`` is False, return a single weighted choice from the
+    theme's table. When True, return a sequence ``count`` bars long where each
+    subsequent bar may re-roll the meter with probability ``p_shift``.
     """
-    _ = theme  # API compatibility; theme currently does not affect rhythm
-    pool = ODD_TIME_SIGNATURES.copy()
-    if chaotic:
-        picks: List[Tuple[int, int]] = []
-        for _ in range(min(count, len(pool))):
-            sig = prng.weighted_choice(pool)
-            picks.append(sig)
-            pool = [iw for iw in pool if iw[0] != sig]
-        return picks
-    return prng.weighted_choice(pool)
+
+    table = TIME_SIGNATURE_TABLES[theme]
+    if not chaotic:
+        return prng.weighted_choice(table)
+
+    p_shift = TIME_SIGNATURE_SHIFT[theme]
+    seq: List[Tuple[int, int]] = []
+    current = prng.weighted_choice(table)
+    for _ in range(max(1, count)):
+        seq.append(current)
+        if prng.uniform() < p_shift:
+            current = prng.weighted_choice(table)
+    return seq
 
 
 def build_melody(

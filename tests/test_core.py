@@ -91,17 +91,12 @@ def test_mythic_variants(tmp_path: Path):
             assert r.getnframes() == nframes
 
 
-def test_pick_time_signature_odd_sequence(root_seed: bytes):
-    prng_single = irr.domain_prngs(root_seed)["rhythm"]
-    ts = irr.pick_time_signature(prng_single, "glass")
-    assert ts[0] % 2 == 1
-
-    prng_seq = irr.domain_prngs(root_seed)["rhythm"]
-    seq = irr.pick_time_signature(prng_seq, "glass", chaotic=True)
-    assert isinstance(seq, list) and seq
-    for num, _ in seq:
-        assert num % 2 == 1
-    assert len(set(seq)) > 1
+def test_pick_time_signature_sequence_deterministic(root_seed: bytes):
+    prng1 = irr.domain_prngs(root_seed)["rhythm"]
+    prng2 = irr.domain_prngs(root_seed)["rhythm"]
+    seq1 = irr.pick_time_signature(prng1, "glass", chaotic=True, count=8)
+    seq2 = irr.pick_time_signature(prng2, "glass", chaotic=True, count=8)
+    assert seq1 == seq2
 
 
 def test_prng_ctrl_deterministic(root_seed: bytes):
