@@ -33,6 +33,7 @@ from .synth import (
 )
 from .vault import ensure_vault, vault_insert_run, vault_insert_artifact
 from .qa import measure_peak, measure_rms, validate_lufs
+from .qa.affect import rhythm_stability, spectral_centroid
 
 __version__ = "0.2"
 
@@ -48,7 +49,7 @@ __all__ = [
     "mythic_ashen_bitcrush", "mythic_mirrorsalt_ms", "mythic_liminal_bed",
     "mythic_cipherspray_watermark", "ensure_vault", "vault_insert_run",
     "vault_insert_artifact", "parse_args", "_resolve_artifact_paths",
-    "measure_peak", "measure_rms", "validate_lufs", "run_riddle",
+    "measure_peak", "measure_rms", "validate_lufs", "rhythm_stability", "spectral_centroid", "run_riddle",
 ]
 
 
@@ -309,6 +310,8 @@ def run_riddle(
             peak_db = measure_peak(wav_path)
             rms_db = measure_rms(wav_path)
             crest_db = peak_db - rms_db
+            presence = spectral_centroid(wav_path)
+            coherence = rhythm_stability(wav_path)
             if not validate_lufs(rms_db, lufs_target):
                 logging.warning("[!] LUFS target %.1f dB, measured %.1f dB", lufs_target, rms_db)
 
@@ -341,6 +344,8 @@ def run_riddle(
                 "loudness_target": lufs_target,
                 "crest_factor_est": crest_db,
                 "true_peak_est": peak_db,
+                "coherence_est": coherence,
+                "presence_est": presence,
             }
             with open(json_path, "w", encoding="utf-8") as f:
                 json.dump(sidecar, f, indent=2)
@@ -354,8 +359,8 @@ def run_riddle(
                 "form_path": form_str,
                 "bpm_base": bpm_base,
                 "lufs_target": lufs_target,
-                "coherence": 0.7 if theme == "glass" else 0.6,
-                "presence": 0.5,
+                "coherence": coherence,
+                "presence": presence,
                 "hostility": 0.2,
                 "obliquity": 0.6 if theme == "glass" else 0.7,
                 "time_sigs": [f"{n}/{d}" for n, d in time_sigs],
