@@ -25,7 +25,12 @@ def ensure_vault(conn: sqlite3.Connection) -> None:
           coherence REAL,
           presence REAL,
           hostility REAL,
-          obliquity REAL
+          obliquity REAL,
+          render_time_sec REAL,
+          cpu_load_est REAL,
+          notes_total INTEGER,
+          mythic_count INTEGER,
+          stems_count INTEGER
         );
         """
         )
@@ -66,7 +71,10 @@ def ensure_vault(conn: sqlite3.Connection) -> None:
           duration_sec REAL,
           bpm_est REAL,
           key_hint TEXT,
-          mythic_type TEXT
+          mythic_type TEXT,
+          render_time_sec REAL,
+          cpu_load_est REAL,
+          notes_total INTEGER
         );
         """
         )
@@ -80,8 +88,8 @@ def vault_insert_run(conn: sqlite3.Connection, run) -> int:
         cur = conn.cursor()
         cur.execute(
             """
-        INSERT INTO runs(started_utc, theme, seed_commitment, duration_sec, form_path, bpm_base, lufs_target, coherence, presence, hostility, obliquity)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO runs(started_utc, theme, seed_commitment, duration_sec, form_path, bpm_base, lufs_target, coherence, presence, hostility, obliquity, render_time_sec, cpu_load_est, notes_total, mythic_count, stems_count)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
             (
                 run["started_utc"],
@@ -95,6 +103,11 @@ def vault_insert_run(conn: sqlite3.Connection, run) -> int:
                 run["presence"],
                 run["hostility"],
                 run["obliquity"],
+                run["render_time_sec"],
+                run["cpu_load_est"],
+                run["notes_total"],
+                run["mythic_count"],
+                run["stems_count"],
             ),
         )
         run_id = cur.lastrowid
@@ -125,6 +138,10 @@ def vault_insert_artifact(
     bpm_est: Optional[float],
     key_hint: Optional[str],
     mythic_type: Optional[str],
+    *,
+    render_time_sec: Optional[float] = None,
+    cpu_load_est: Optional[float] = None,
+    notes_total: Optional[int] = None,
 ) -> None:
     """Insert an artifact record."""
     sha256 = sha256_of_file(path)
@@ -132,8 +149,20 @@ def vault_insert_artifact(
         cur = conn.cursor()
         cur.execute(
             """
-        INSERT INTO artifacts(run_id, kind, path, sha256, duration_sec, bpm_est, key_hint, mythic_type)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO artifacts(run_id, kind, path, sha256, duration_sec, bpm_est, key_hint, mythic_type, render_time_sec, cpu_load_est, notes_total)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
-            (run_id, kind, str(path), sha256, duration_sec, bpm_est, key_hint, mythic_type),
+            (
+                run_id,
+                kind,
+                str(path),
+                sha256,
+                duration_sec,
+                bpm_est,
+                key_hint,
+                mythic_type,
+                render_time_sec,
+                cpu_load_est,
+                notes_total,
+            ),
         )
