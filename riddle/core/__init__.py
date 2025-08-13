@@ -186,8 +186,10 @@ def midi_note_in_scale(prng: Xoshiro256StarStar, scale_pcs: List[int], min_note=
 
 
 # ----------------------------- Length Engine -----------------------------
-def sample_duration_seconds(prng_form: Xoshiro256StarStar, theme: str, override: Optional[str]) -> int:
-    bucket_p = {"short":0.70, "med":0.25, "long":0.05}
+def sample_duration_seconds(
+    prng_form: Xoshiro256StarStar, theme: str, override: Optional[str]
+) -> Tuple[int, str]:
+    bucket_p = {"short": 0.70, "med": 0.25, "long": 0.05}
     if override in bucket_p:
         bucket = override
     else:
@@ -198,15 +200,21 @@ def sample_duration_seconds(prng_form: Xoshiro256StarStar, theme: str, override:
             bucket = "med"
         else:
             bucket = "long"
+        if theme == "glass" and bucket != "long":
+            if prng_form.uniform() < 0.20:
+                bucket = "med" if bucket == "short" else "long"
+        elif theme == "salt" and bucket != "short":
+            if prng_form.uniform() < 0.20:
+                bucket = "short" if bucket == "med" else "med"
 
     mu_sigma = {
         "short": (math.log(60.0), 0.45),
-        "med":   (math.log(600.0), 0.50),
-        "long":  (math.log(5400.0), 0.60),
+        "med": (math.log(600.0), 0.50),
+        "long": (math.log(5400.0), 0.60),
     }
     mu, sigma = mu_sigma[bucket]
-    secs = int(max(20.0, min(3*3600.0, math.exp(prng_form.normal(mu, sigma)))))
-    return secs
+    secs = int(max(20.0, min(3 * 3600.0, math.exp(prng_form.normal(mu, sigma)))))
+    return secs, bucket
 
 
 # ----------------------------- Form Generation -----------------------------

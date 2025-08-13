@@ -25,7 +25,7 @@ class TestNoisePercDeterminism(unittest.TestCase):
 
     def run_once(self, outdir: Path, db_path: Path) -> Path:
         orig_duration = irr.sample_duration_seconds
-        irr.sample_duration_seconds = lambda prng, theme, bucket: 1
+        irr.sample_duration_seconds = lambda prng, theme, bucket: (1, bucket or "short")
         try:
             irr.run_riddle("glass", outdir, db_path, "short", True, 0, -14.0, self.seed, 0)
         finally:

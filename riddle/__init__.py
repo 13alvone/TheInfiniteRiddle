@@ -159,9 +159,17 @@ def run_riddle(
             prng_video = prngs["video"]  # reserved for future modules
 
             theme = pick_theme(prngs["names"], theme_req)
-            total_sec = sample_duration_seconds(prngs["form"], theme, duration_bucket)
+            total_sec, bucket = sample_duration_seconds(
+                prngs["form"], theme, duration_bucket
+            )
             form_nodes, timeline = pick_form(prngs["form"], theme, total_sec)
-            logging.info("[i] Theme=%s Duration=%ds Form=%s", theme, total_sec, "→".join(form_nodes))
+            logging.info(
+                "[i] Theme=%s Bucket=%s Duration=%ds Form=%s",
+                theme,
+                bucket,
+                total_sec,
+                "→".join(form_nodes),
+            )
 
             if theme == "glass":
                 bpm_base = 96.0 + (prngs["rhythm"].uniform() - 0.5) * 30.0
@@ -296,6 +304,7 @@ def run_riddle(
             sidecar = {
                 "seed_commitment": commit,
                 "theme": theme,
+                "duration_bucket": bucket,
                 "form_nodes": form_nodes,
                 "form_path": form_str,
                 "durations": [{"node": n, "start": float(s), "end": float(e)} for (n, s, e) in timeline],

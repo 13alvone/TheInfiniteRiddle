@@ -23,7 +23,7 @@ class TestStemsGeneration(unittest.TestCase):
 
     def test_stems_and_vault_records(self):
         orig_duration = irr.sample_duration_seconds
-        irr.sample_duration_seconds = lambda prng, theme, bucket: 1
+        irr.sample_duration_seconds = lambda prng, theme, bucket: (1, bucket or "short")
         try:
             outdir = self.root / "out"
             db_path = self.root / "vault.db"
