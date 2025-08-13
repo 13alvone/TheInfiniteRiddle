@@ -70,8 +70,29 @@ def test_run_riddle_metrics(tmp_path: Path, root_seed: bytes):
     assert sidecar["crest_factor_est"] is not None
     assert 0.0 <= sidecar["coherence_est"] <= 1.0
     assert 0.0 <= sidecar["presence_est"] <= 1.0
+    assert sidecar["render_time_sec"] >= 0.0
+    assert sidecar["cpu_load_est"] >= 0.0
+    assert sidecar["notes_total"] > 0
+    assert sidecar["mythic_count"] == 0
+    assert sidecar["stems_count"] == 0
     import sqlite3
     with sqlite3.connect(str(db_path)) as conn:
-        row = conn.execute("SELECT coherence, presence FROM runs").fetchone()
+        row = conn.execute(
+            "SELECT coherence, presence, render_time_sec, cpu_load_est, notes_total, mythic_count, stems_count FROM runs"
+        ).fetchone()
+        midi_row = conn.execute(
+            "SELECT notes_total FROM artifacts WHERE kind='midi'"
+        ).fetchone()
+        wav_row = conn.execute(
+            "SELECT render_time_sec, cpu_load_est FROM artifacts WHERE kind='wav'"
+        ).fetchone()
     assert 0.0 <= row[0] <= 1.0
     assert 0.0 <= row[1] <= 1.0
+    assert row[2] >= 0.0
+    assert row[3] >= 0.0
+    assert row[4] > 0
+    assert row[5] == 0
+    assert row[6] == 0
+    assert midi_row[0] > 0
+    assert wav_row[0] >= 0.0
+    assert wav_row[1] >= 0.0

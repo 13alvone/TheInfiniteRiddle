@@ -31,7 +31,18 @@ def test_sidecar_fields(short_run: Path):
     sidecars = list(short_run.glob("*.riddle.json"))
     assert sidecars, "sidecar not generated"
     data = json.loads(sidecars[0].read_text())
-    for field in ("seed_commitment", "theme", "duration_bucket", "form_nodes", "artifact_hashes"):
+    for field in (
+        "seed_commitment",
+        "theme",
+        "duration_bucket",
+        "form_nodes",
+        "artifact_hashes",
+        "render_time_sec",
+        "cpu_load_est",
+        "notes_total",
+        "mythic_count",
+        "stems_count",
+    ):
         assert field in data
     assert "durations" in data and data["durations"]
     assert all("pct" in seg for seg in data["durations"])

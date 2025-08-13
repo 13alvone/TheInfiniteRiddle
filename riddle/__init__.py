@@ -34,6 +34,7 @@ from .synth import (
 from .vault import ensure_vault, vault_insert_run, vault_insert_artifact
 from .qa import measure_peak, measure_rms, validate_lufs
 from .qa.affect import rhythm_stability, spectral_centroid
+import time
 
 __version__ = "0.2"
 
@@ -291,7 +292,10 @@ def run_riddle(
             mb.save(midi_path)
             logging.info("[i] MIDI written: %s", midi_path.name)
 
+            notes_total = len(lead_events) + len(pad_events) + len(bass_events) + len(perc_events)
+
             midi_dict = {"lead": lead_events, "pad": pad_events, "bass": bass_events, "perc": perc_events}
+            t0 = time.perf_counter()
             render_audio(
                 wav_path,
                 midi_dict,
@@ -303,6 +307,7 @@ def run_riddle(
                 prng_ctrl,
                 stem_paths=stem_paths if stems else None,
             )
+            render_time_sec = time.perf_counter() - t0
             logging.info("[i] WAV written: %s", wav_path.name)
             if stems:
                 for p in stem_paths.values():
@@ -314,6 +319,28 @@ def run_riddle(
             coherence = rhythm_stability(wav_path)
             if not validate_lufs(rms_db, lufs_target):
                 logging.warning("[!] LUFS target %.1f dB, measured %.1f dB", lufs_target, rms_db)
+            cpu_load_est = render_time_sec / total_sec if total_sec else 0.0
+
+            mythics = [
+                ("Backmask", mythic_backmask),
+                ("Ashen", mythic_ashen_bitcrush),
+                ("MirrorSalt", mythic_mirrorsalt_ms),
+                ("Liminal", mythic_liminal_bed),
+                ("CipherSpray", lambda src, dst: mythic_cipherspray_watermark(src, dst, commit[:16])),
+            ]
+            prng_m = prngs["mythic"]
+            mythic_paths = []
+            for label, fn in mythics:
+                if len(mythic_paths) >= mythic_max:
+                    break
+                if prng_m.uniform() < 0.22:
+                    dst = outdir / f"{base}_MYTHIC_{label}_{seed8}.wav"
+                    try:
+                        fn(wav_path, dst)
+                        mythic_paths.append((label, dst))
+                        logging.info("[i] Mythic generated: %s", dst.name)
+                    except Exception as e:
+                        logging.error("[x] Mythic %s failed: %s", label, e)
 
             sidecar = {
                 "seed_commitment": commit,
@@ -339,6 +366,7 @@ def run_riddle(
                     "midi": sha256_of_file(midi_path),
                     "wav": sha256_of_file(wav_path),
                     **({"stems": {k: sha256_of_file(p) for k, p in stem_paths.items()}} if stems else {}),
+                    **({"mythics": {lbl: sha256_of_file(p) for lbl, p in mythic_paths}} if mythic_paths else {}),
                 },
                 "started_utc": timestamp_now_utc(),
                 "loudness_target": lufs_target,
@@ -346,6 +374,11 @@ def run_riddle(
                 "true_peak_est": peak_db,
                 "coherence_est": coherence,
                 "presence_est": presence,
+                "render_time_sec": render_time_sec,
+                "cpu_load_est": cpu_load_est,
+                "notes_total": notes_total,
+                "mythic_count": len(mythic_paths),
+                "stems_count": len(stem_paths),
             }
             with open(json_path, "w", encoding="utf-8") as f:
                 json.dump(sidecar, f, indent=2)
@@ -363,6 +396,11 @@ def run_riddle(
                 "presence": presence,
                 "hostility": 0.2,
                 "obliquity": 0.6 if theme == "glass" else 0.7,
+                "render_time_sec": render_time_sec,
+                "cpu_load_est": cpu_load_est,
+                "notes_total": notes_total,
+                "mythic_count": len(mythic_paths),
+                "stems_count": len(stem_paths),
                 "time_sigs": [f"{n}/{d}" for n, d in time_sigs],
                 "meters": {k: [f"{n}/{d}" for n, d in v] for k, v in meters.items()},
                 "sections": [
@@ -381,34 +419,43 @@ def run_riddle(
             }
             run_id = vault_insert_run(conn, run_obj)
             vault_insert_artifact(conn, run_id, "json", json_path, 0.0, None, None, None)
-            vault_insert_artifact(conn, run_id, "midi", midi_path, total_sec, bpm_base, keymode, None)
-            vault_insert_artifact(conn, run_id, "wav", wav_path, total_sec, bpm_base, keymode, None)
+            vault_insert_artifact(
+                conn,
+                run_id,
+                "midi",
+                midi_path,
+                total_sec,
+                bpm_base,
+                keymode,
+                None,
+                notes_total=notes_total,
+            )
+            vault_insert_artifact(
+                conn,
+                run_id,
+                "wav",
+                wav_path,
+                total_sec,
+                bpm_base,
+                keymode,
+                None,
+                render_time_sec=render_time_sec,
+                cpu_load_est=cpu_load_est,
+            )
             if stems:
                 for name, path in stem_paths.items():
                     vault_insert_artifact(conn, run_id, "stem", path, total_sec, bpm_base, keymode, name)
+            for label, path in mythic_paths:
+                vault_insert_artifact(conn, run_id, "mythic", path, total_sec, bpm_base, keymode, label)
 
-            mythics = [
-                ("Backmask", mythic_backmask),
-                ("Ashen", mythic_ashen_bitcrush),
-                ("MirrorSalt", mythic_mirrorsalt_ms),
-                ("Liminal", mythic_liminal_bed),
-                ("CipherSpray", lambda src, dst: mythic_cipherspray_watermark(src, dst, commit[:16])),
-            ]
-            prng_m = prngs["mythic"]
-            rolled = 0
-            for label, fn in mythics:
-                if rolled >= mythic_max:
-                    break
-                if prng_m.uniform() < 0.22:
-                    dst = outdir / f"{base}_MYTHIC_{label}_{seed8}.wav"
-                    try:
-                        fn(wav_path, dst)
-                        vault_insert_artifact(conn, run_id, "mythic", dst, total_sec, bpm_base, keymode, label)
-                        logging.info("[i] Mythic generated: %s", dst.name)
-                        rolled += 1
-                    except Exception as e:
-                        logging.error("[x] Mythic %s failed: %s", label, e)
-
+            logging.info(
+                "[i] Metrics RenderTime=%.2fs CPU=%.2f Notes=%d Mythics=%d Stems=%d",
+                render_time_sec,
+                cpu_load_est,
+                notes_total,
+                len(mythic_paths),
+                len(stem_paths),
+            )
             logging.info("[i] Completed run. SeedCommit=%s", commit[:16])
     except Exception as e:
         logging.exception("[x] Fatal error: %s", e)
