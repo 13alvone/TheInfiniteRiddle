@@ -107,7 +107,7 @@ Run as a module:
 	- [ ] Sidecar fields populated; no secrets; hashes verified
 	- [ ] Vault rows persisted; search works for new fields
 	- [ ] QA metrics pass: no clipping, TP ≤ -0.3 dBTP, RMS floor ≥ -45 dBFS
-	- [ ] Tests added/updated; `pytest -q` passes locally
+        - [ ] Tests added/updated; `pytest` passes locally
 	- [ ] Docs (AGENTS.md/SPEC.md/SECURITY.md) updated if behavior changed
 	- [ ] For security-impacting changes: Custodian sign-off included
 	- [ ] Attach example artifacts (WAV+MIDI) + sidecar + seed commitment
@@ -122,7 +122,8 @@ Run as a module:
 
 Run:
 	#!/usr/bin/env bash
-	pytest -q
+	pip install -r requirements-dev.txt
+	pytest
 
 ### 4.2 Property Tests (recommended)
 - No two seeds collide across 10k runs
