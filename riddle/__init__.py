@@ -116,15 +116,24 @@ def _resolve_artifact_paths(outdir_arg: str, db_arg: str, root: Path) -> Tuple[P
     return outdir, db_path
 
 
-def pick_time_signatures(prng, theme: str, form_nodes: List[str]):
-    """Pick an odd-meter signature for each form node."""
-    sigs = []
-    for _ in form_nodes:
-        ts = pick_time_signature(prng, theme)
-        if isinstance(ts, list):
-            ts = ts[0]
-        sigs.append(ts)
-    return sigs
+def pick_time_signatures(
+    prng, theme: str, form_nodes: List[str], bars: int = 4, chaotic: bool = True
+):
+    """Pick a time signature sequence for each form node.
+
+    Returns a tuple ``(base_sigs, meters)`` where ``base_sigs`` is a list of the
+    first signature for each node and ``meters`` maps node→ordered signatures.
+    """
+
+    base_sigs = []
+    meters = {}
+    for node in form_nodes:
+        seq = pick_time_signature(prng, theme, chaotic=chaotic, count=bars)
+        if not isinstance(seq, list):
+            seq = [seq]
+        base_sigs.append(seq[0])
+        meters[node] = seq
+    return base_sigs, meters
 
 
 def run_riddle(
@@ -184,7 +193,9 @@ def run_riddle(
             logging.info("[i] Key=%s %s; BPM≈%.1f", key_pc_name, mode_name, bpm_base)
 
             ppq = 480
-            time_sigs = pick_time_signatures(prngs["rhythm"], theme, form_nodes)
+            time_sigs, meters = pick_time_signatures(
+                prngs["rhythm"], theme, form_nodes
+            )
             sections: List[Tuple[int, int, int]] = []
             section_starts: List[int] = []
             tick_accum = 0
@@ -318,6 +329,7 @@ def run_riddle(
                 ],
                 "bpm_base": bpm_base,
                 "time_sigs": [f"{n}/{d}" for n, d in time_sigs],
+                "meters": {k: [f"{n}/{d}" for n, d in v] for k, v in meters.items()},
                 "key_mode": {"root_pc": key_root, "root_name": key_pc_name, "mode": mode_name},
                 "sigil_pcs": sigil_pcs,
                 "artifact_hashes": {
@@ -347,6 +359,7 @@ def run_riddle(
                 "hostility": 0.2,
                 "obliquity": 0.6 if theme == "glass" else 0.7,
                 "time_sigs": [f"{n}/{d}" for n, d in time_sigs],
+                "meters": {k: [f"{n}/{d}" for n, d in v] for k, v in meters.items()},
                 "sections": [
                     {
                         "key_root": key_pc_name,
