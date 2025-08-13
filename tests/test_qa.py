@@ -10,6 +10,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import riddle as irr
+from riddle.qa.affect import rhythm_stability, spectral_centroid
 
 
 def _write_sine(path: Path, amplitude: float = 0.5, freq: float = 1000.0, dur: float = 0.1, rate: int = 48000) -> None:
@@ -24,6 +25,20 @@ def _write_sine(path: Path, amplitude: float = 0.5, freq: float = 1000.0, dur: f
             sample = amplitude * math.sin(2 * math.pi * freq * (i / rate))
             buf.extend(struct.pack("<h", int(sample * 32767)))
         wf.writeframes(buf)
+
+
+def test_affect_functions(tmp_path: Path):
+    wav = tmp_path/"tone.wav"
+    _write_sine(wav, amplitude=0.5, freq=440.0)
+    c1 = rhythm_stability(wav)
+    c2 = rhythm_stability(wav)
+    assert 0.0 <= c1 <= 1.0
+    assert c1 == pytest.approx(c2)
+    p1 = spectral_centroid(wav)
+    p2 = spectral_centroid(wav)
+    assert 0.0 <= p1 <= 1.0
+    assert p1 == pytest.approx(p2)
+
 
 
 def test_measure_functions(tmp_path: Path):
@@ -53,3 +68,10 @@ def test_run_riddle_metrics(tmp_path: Path, root_seed: bytes):
     sidecar = json.loads(next(outdir.glob("*.riddle.json")).read_text())
     assert sidecar["true_peak_est"] is not None
     assert sidecar["crest_factor_est"] is not None
+    assert 0.0 <= sidecar["coherence_est"] <= 1.0
+    assert 0.0 <= sidecar["presence_est"] <= 1.0
+    import sqlite3
+    with sqlite3.connect(str(db_path)) as conn:
+        row = conn.execute("SELECT coherence, presence FROM runs").fetchone()
+    assert 0.0 <= row[0] <= 1.0
+    assert 0.0 <= row[1] <= 1.0
