@@ -44,7 +44,7 @@ def test_run_riddle_metrics(tmp_path: Path, root_seed: bytes):
     orig_entropy = irr.gather_entropy
     orig_duration = irr.sample_duration_seconds
     irr.gather_entropy = lambda: root_seed
-    irr.sample_duration_seconds = lambda prng, theme, bucket: 1
+    irr.sample_duration_seconds = lambda prng, theme, bucket: (1, bucket or "short")
     try:
         irr.run_riddle("glass", outdir, db_path, "short", False, 0, -14.0, None, 0)
     finally:

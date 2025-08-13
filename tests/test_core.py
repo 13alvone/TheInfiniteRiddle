@@ -26,20 +26,20 @@ def create_wav(path: Path, nframes: int = 1000, sr: int = 48000) -> None:
 def test_duration_sampling_deterministic(root_seed: bytes):
     prng1 = irr.domain_prngs(root_seed)["form"]
     prng2 = irr.domain_prngs(root_seed)["form"]
-    d1 = irr.sample_duration_seconds(prng1, "glass", None)
-    d2 = irr.sample_duration_seconds(prng2, "glass", None)
-    assert d1 == d2
+    d1, b1 = irr.sample_duration_seconds(prng1, "glass", None)
+    d2, b2 = irr.sample_duration_seconds(prng2, "glass", None)
+    assert d1 == d2 and b1 == b2
     assert 20 <= d1 <= 3 * 3600
 
 
 def test_form_generation_deterministic(root_seed: bytes):
     prng1 = irr.domain_prngs(root_seed)["form"]
-    total = irr.sample_duration_seconds(prng1, "glass", None)
+    total, bucket = irr.sample_duration_seconds(prng1, "glass", None)
     path1, timeline1 = irr.pick_form(prng1, "glass", total)
     prng2 = irr.domain_prngs(root_seed)["form"]
-    total2 = irr.sample_duration_seconds(prng2, "glass", None)
+    total2, bucket2 = irr.sample_duration_seconds(prng2, "glass", None)
     path2, timeline2 = irr.pick_form(prng2, "glass", total2)
-    assert total == total2
+    assert total == total2 and bucket == bucket2
     assert path1 == path2
     assert timeline1 == timeline2
     assert abs(timeline1[-1][2] - total) < 1e-6
