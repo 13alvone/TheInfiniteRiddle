@@ -96,7 +96,17 @@ def gather_entropy() -> bytes:
 
 
 def domain_prngs(root_seed: bytes) -> Dict[str, Xoshiro256StarStar]:
-    labels = [b"names", b"form", b"rhythm", b"harmony", b"melody", b"synth", b"mythic"]
+    labels = [
+        b"names",
+        b"form",
+        b"rhythm",
+        b"harmony",
+        b"melody",
+        b"synth",
+        b"mythic",
+        b"ctrl",
+        b"video",
+    ]
     out = {}
     for label in labels:
         seed = hkdf_sha256(root_seed, b"riddlev0", label, 32)
